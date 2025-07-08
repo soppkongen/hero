@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
-import { Waves, Recycle, User, AlertCircle } from "lucide-react"
+import { Waves, Recycle, AlertCircle } from "lucide-react"
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -16,7 +16,7 @@ export default function AuthPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
-  const { user, signIn, signUp, createTestUser } = useAuth()
+  const { user, signIn, signUp } = useAuth()
   const router = useRouter()
 
   // Redirect if already logged in
@@ -50,23 +50,6 @@ export default function AuthPage() {
     }
   }
 
-  const handleCreateTestUser = async () => {
-    setLoading(true)
-    setError("")
-    setSuccess("")
-
-    try {
-      await createTestUser()
-      setSuccess("Testbruker opprettet og logget inn!")
-      // Redirect will happen automatically via useEffect when user state changes
-    } catch (err: any) {
-      console.error("Test user creation error:", err)
-      setError(err.message || "Kunne ikke opprette testbruker")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const fillTestCredentials = () => {
     setEmail("test@example.com")
     setPassword("testpassword123")
@@ -95,28 +78,6 @@ export default function AuthPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Skjærgårdshelt</h1>
           <p className="text-gray-600 mt-2">{isLogin ? "Velkommen tilbake!" : "Bli en kystopprydningshelt!"}</p>
-        </div>
-
-        {/* Quick Test User Button */}
-        <div className="mb-6">
-          <button
-            onClick={handleCreateTestUser}
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-          >
-            <User className="w-5 h-5" />
-            {loading ? "Oppretter testbruker..." : "Opprett ny testbruker"}
-          </button>
-          <p className="text-xs text-gray-500 text-center mt-2">Oppretter automatisk en testbruker med unik e-post</p>
-        </div>
-
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">eller</span>
-          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

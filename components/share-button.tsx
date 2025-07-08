@@ -1,40 +1,32 @@
 "use client"
 
 import { useState } from "react"
-import { Share2, Facebook, Instagram, MessageCircle, Copy, Check } from "lucide-react"
+import { Share2, Facebook, Instagram, Copy, Check } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface ShareButtonProps {
-  url?: string
-  title?: string
-  description?: string
+  url: string
+  title: string
+  description: string
   className?: string
+  iconOnly?: boolean
 }
 
-export function ShareButton({
-  url = typeof window !== "undefined" ? window.location.href : "",
-  title = "Skjærgårdshelt - Coastal Cleanup Hero",
-  description = "Se hva jeg har gjort for å rydde kysten! Bli med og gjør en forskjell 🌊♻️",
-  className = "",
-}: ShareButtonProps) {
-  const [showOptions, setShowOptions] = useState(false)
+export function ShareButton({ url, title, description, className = "", iconOnly = false }: ShareButtonProps) {
   const [copied, setCopied] = useState(false)
-
-  const shareData = {
-    title,
-    text: description,
-    url,
-  }
 
   const handleNativeShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share(shareData)
+        await navigator.share({
+          title,
+          text: description,
+          url,
+        })
       } catch (error) {
         console.log("Error sharing:", error)
-        setShowOptions(true)
       }
-    } else {
-      setShowOptions(true)
     }
   }
 
@@ -44,80 +36,67 @@ export function ShareButton({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
-      console.log("Error copying:", error)
+      console.error("Failed to copy:", error)
     }
   }
 
-  const shareToFacebook = () => {
+  const handleFacebookShare = () => {
     const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
     window.open(facebookUrl, "_blank", "width=600,height=400")
   }
 
-  const shareToInstagram = () => {
+  const handleInstagramShare = () => {
     // Instagram doesn't have direct URL sharing, so we copy the link
     handleCopyLink()
-    alert("Link kopiert! Åpne Instagram og lim inn i din story eller post.")
+    alert("Link kopiert! Lim inn i Instagram Stories eller post.")
   }
 
-  const shareToSnapchat = () => {
-    const snapchatUrl = `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(url)}`
-    window.open(snapchatUrl, "_blank")
+  // If native sharing is available, use it directly
+  if (navigator.share && !iconOnly) {
+    return (
+      <Button
+        onClick={handleNativeShare}
+        variant="ghost"
+        size="sm"
+        className={`text-gray-600 hover:text-forest-green ${className}`}
+      >
+        <Share2 className="w-4 h-4 mr-2" />
+        Del
+      </Button>
+    )
   }
 
   return (
-    <div className={`relative ${className}`}>
-      <button
-        onClick={handleNativeShare}
-        className="flex items-center gap-2 text-gray-600 hover:text-[#2D5016] transition-colors p-2 rounded-lg hover:bg-white/50"
-      >
-        <Share2 className="w-5 h-5" />
-        <span className="text-sm">Del</span>
-      </button>
-
-      {showOptions && (
-        <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border p-3 z-50 min-w-[200px]">
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={shareToFacebook}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Facebook className="w-5 h-5 text-blue-600" />
-              <span className="text-sm">Facebook</span>
-            </button>
-
-            <button
-              onClick={shareToInstagram}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Instagram className="w-5 h-5 text-pink-600" />
-              <span className="text-sm">Instagram</span>
-            </button>
-
-            <button
-              onClick={shareToSnapchat}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <MessageCircle className="w-5 h-5 text-yellow-500" />
-              <span className="text-sm">Snapchat</span>
-            </button>
-
-            <button
-              onClick={handleCopyLink}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-gray-600" />}
-              <span className="text-sm">{copied ? "Kopiert!" : "Kopier link"}</span>
-            </button>
-          </div>
-
-          <button
-            onClick={() => setShowOptions(false)}
-            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-          >
-            ×
-          </button>
-        </div>
-      )}
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className={`text-gray-600 hover:text-forest-green ${className}`}>
+          <Share2 className="w-4 h-4" />
+          {!iconOnly && <span className="ml-2">Del</span>}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem onClick={handleFacebookShare}>
+          <Facebook className="w-4 h-4 mr-2 text-blue-600" />
+          Facebook
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleInstagramShare}>
+          <Instagram className="w-4 h-4 mr-2 text-pink-600" />
+          Instagram
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleCopyLink}>
+          {copied ? (
+            <>
+              <Check className="w-4 h-4 mr-2 text-green-600" />
+              Kopiert!
+            </>
+          ) : (
+            <>
+              <Copy className="w-4 h-4 mr-2" />
+              Kopier link
+            </>
+          )}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

@@ -122,7 +122,7 @@ export default function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Laster toppliste...</p>
       </div>
     )
@@ -132,8 +132,8 @@ export default function LeaderboardPage() {
   const currentUserRank = sortedUsers.findIndex((u) => u.id === user?.id) + 1
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-white border-b border-gray-200">
+    <div className="min-h-screen pb-20">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="flex items-center justify-center py-4">
           <div className="flex items-center gap-2">
             <Trophy className="w-6 h-6 text-yellow-500" />
@@ -162,7 +162,7 @@ export default function LeaderboardPage() {
         )}
 
         {/* Tabs */}
-        <div className="flex mb-6 bg-white rounded-lg p-1">
+        <div className="flex mb-6 bg-white/80 backdrop-blur-sm rounded-lg p-1">
           <button
             onClick={() => setActiveTab("points")}
             className={`flex-1 py-2 px-3 text-center text-sm font-medium rounded-md transition-colors ${

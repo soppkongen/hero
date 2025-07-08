@@ -132,7 +132,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Laster profil...</p>
       </div>
     )
@@ -140,7 +140,7 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Kunne ikke laste profil</p>
       </div>
     )
@@ -149,8 +149,8 @@ export default function ProfilePage() {
   const levelInfo = getLevelInfo(profile.level)
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-white border-b border-gray-200">
+    <div className="min-h-screen pb-20">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="flex items-center justify-between px-4 py-4">
           <h1 className="text-lg font-semibold text-gray-900">Profil</h1>
           <button onClick={handleSignOut} className="text-gray-600 hover:text-red-600 transition-colors">

@@ -1,7 +1,7 @@
 "use client"
 
-import { Waves, Recycle, Heart, Users, Target, TrendingUp } from "lucide-react"
 import Link from "next/link"
+import { Waves, Recycle, Heart, Users, Target, TrendingUp } from "lucide-react"
 import { ShareButton } from "@/components/share-button"
 
 export default function WelcomePage() {
@@ -9,19 +9,19 @@ export default function WelcomePage() {
     <div className="min-h-screen relative overflow-hidden">
       {/* Floating background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 text-blue-200/30 animate-bounce">
+        <div className="absolute top-20 left-10 text-blue-400/40 animate-bounce">
           <Waves className="w-8 h-8" />
         </div>
-        <div className="absolute top-40 right-16 text-green-200/30 animate-pulse">
+        <div className="absolute top-40 right-16 text-green-400/40 animate-pulse">
           <Recycle className="w-6 h-6" />
         </div>
-        <div className="absolute bottom-40 left-20 text-blue-200/30 animate-bounce delay-1000">
+        <div className="absolute bottom-40 left-20 text-blue-400/40 animate-bounce delay-1000">
           <Heart className="w-5 h-5" />
         </div>
-        <div className="absolute top-60 right-8 text-green-200/30 animate-pulse delay-500">
+        <div className="absolute top-60 right-8 text-green-400/40 animate-pulse delay-500">
           <Waves className="w-7 h-7" />
         </div>
-        <div className="absolute bottom-60 right-24 text-blue-200/30 animate-bounce delay-700">
+        <div className="absolute bottom-60 right-24 text-blue-400/40 animate-bounce delay-700">
           <Recycle className="w-4 h-4" />
         </div>
       </div>
@@ -31,8 +31,9 @@ export default function WelcomePage() {
           {/* Logo and branding */}
           <div className="flex items-center justify-center gap-3 mb-8">
             <div className="flex items-center gap-2">
-              <Waves className="w-8 h-8 text-blue-600" />
-              <Recycle className="w-8 h-8 text-green-600" />
+              <Waves className="w-8 h-8 text-ocean-blue-light" />
+              <span className="text-2xl font-bold logo-text">Skjærgårdshelt</span>
+              <Recycle className="w-8 h-8 text-forest-green-light" />
             </div>
           </div>
 
@@ -40,7 +41,7 @@ export default function WelcomePage() {
           <div className="mb-12">
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
               Bli en{" "}
-              <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-ocean-blue-light to-forest-green-light bg-clip-text text-transparent">
                 Skjærgårdshelt
               </span>
               .
@@ -61,7 +62,7 @@ export default function WelcomePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
               <Link
                 href="/auth"
-                className="w-full sm:w-auto bg-gradient-to-r from-[#2D5016] to-[#1E3A8A] text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                className="w-full sm:w-auto bg-gradient-to-r from-forest-green to-ocean-blue text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200"
               >
                 <span className="block sm:hidden">👉 Start nå</span>
                 <span className="hidden sm:block">👉 Start nå – logg din første ryddeinnsats</span>
@@ -71,7 +72,7 @@ export default function WelcomePage() {
                 url={typeof window !== "undefined" ? window.location.href : ""}
                 title="Skjærgårdshelt - Bli en kystopprydningshelt!"
                 description="Bli med på Skjærgårdshelt og gjør en forskjell for norsk natur! Rydd kysten, få poeng, og vis verden hva du gjør 🌊♻️🇳🇴"
-                className="text-gray-600 hover:text-[#2D5016]"
+                className="text-gray-600 hover:text-forest-green"
               />
             </div>
           </div>
@@ -79,7 +80,7 @@ export default function WelcomePage() {
           {/* Features grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             <div className="card p-6 text-center hover:shadow-xl transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-ocean-blue to-ocean-blue-light rounded-full flex items-center justify-center mx-auto mb-4">
                 <Target className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-3 text-gray-900">Få poeng for innsatsen</h3>
@@ -90,7 +91,7 @@ export default function WelcomePage() {
             </div>
 
             <div className="card p-6 text-center hover:shadow-xl transition-all duration-300">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-forest-green to-forest-green-light rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-3 text-gray-900">Bygg fellesskap</h3>
@@ -115,11 +116,11 @@ export default function WelcomePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-8">Sammen gjør vi en forskjell</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-2">500+</div>
+                <div className="text-3xl font-bold text-ocean-blue-light mb-2">500+</div>
                 <div className="text-sm text-gray-600">Kysthelter</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 mb-2">2.5T</div>
+                <div className="text-3xl font-bold text-forest-green-light mb-2">2.5T</div>
                 <div className="text-sm text-gray-600">Søppel samlet</div>
               </div>
               <div className="text-center">
@@ -127,7 +128,7 @@ export default function WelcomePage() {
                 <div className="text-sm text-gray-600">Strender ryddet</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-orange-600 mb-2">1000+</div>
+                <div className="text-3xl font-bold text-orange-500 mb-2">1000+</div>
                 <div className="text-sm text-gray-600">Ryddeaksjoner</div>
               </div>
             </div>
@@ -138,7 +139,7 @@ export default function WelcomePage() {
             <p className="text-lg text-gray-700 mb-6">Klar til å bli en del av bevegelsen?</p>
             <Link
               href="/auth"
-              className="inline-block bg-gradient-to-r from-[#2D5016] to-[#1E3A8A] text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              className="inline-block bg-gradient-to-r from-forest-green to-ocean-blue text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200"
             >
               Bli med nå – det tar bare 2 minutter! 🌊
             </Link>

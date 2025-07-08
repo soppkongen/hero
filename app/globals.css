@@ -13,11 +13,11 @@
     --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary-foreground: 222.2 84% 4.9%;
     --muted: 210 40% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent-foreground: 222.2 84% 4.9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
@@ -32,14 +32,16 @@
 
     /* Custom Norwegian nature colors */
     --forest-green: #2d5016;
+    --forest-green-light: #3a6a1f;
     --ocean-blue: #1e3a8a;
+    --ocean-blue-light: #2563eb;
     --light-gray: #f8fafc;
     --text-dark: #1f2937;
 
-    /* Gradient background colors */
-    --gradient-start: #f0f9ff;
-    --gradient-middle: #e0f2fe;
-    --gradient-end: #f8fafc;
+    /* Gradient background colors - more vibrant */
+    --gradient-start: #e0f2fe;
+    --gradient-middle: #bae6fd;
+    --gradient-end: #dbeafe;
   }
 
   .dark {
@@ -68,10 +70,10 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
 
-    /* Dark mode gradient */
+    /* Dark mode gradient - more vibrant */
     --gradient-start: #0f172a;
-    --gradient-middle: #1e293b;
-    --gradient-end: #334155;
+    --gradient-middle: #1e3a8a;
+    --gradient-end: #1e293b;
   }
 }
 
@@ -88,7 +90,7 @@
     color: var(--text-dark);
   }
 
-  /* Subtle animated background pattern */
+  /* More visible animated background pattern */
   body::before {
     content: "";
     position: fixed;
@@ -96,8 +98,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: radial-gradient(circle at 25% 25%, rgba(45, 80, 22, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 75% 75%, rgba(30, 58, 138, 0.03) 0%, transparent 50%);
+    background-image: radial-gradient(circle at 25% 25%, rgba(45, 80, 22, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(30, 58, 138, 0.08) 0%, transparent 50%);
     background-size: 400px 400px;
     animation: float 20s ease-in-out infinite;
     pointer-events: none;
@@ -146,7 +148,7 @@
   }
 
   .card {
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(10px);
     border-radius: 0.75rem;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -175,6 +177,7 @@
     background-color: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
     border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 -1px 10px rgba(0, 0, 0, 0.05);
   }
 
   /* Enhanced card hover effects */
@@ -182,6 +185,27 @@
     transform: translateY(-2px);
     box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     transition: all 0.3s ease;
+  }
+
+  /* Logo styles */
+  .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: transform 0.2s ease;
+  }
+
+  .logo-container:hover {
+    transform: scale(1.05);
+  }
+
+  .logo-text {
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--ocean-blue) 0%, var(--forest-green) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
   }
 }
 
@@ -199,4 +223,42 @@
     background-size: 300px 300px;
     animation-duration: 15s;
   }
+}
+
+/* Floating animation patterns */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Safe area for mobile devices */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(45, 80, 22, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(45, 80, 22, 0.5);
 }

@@ -4,19 +4,18 @@ import { useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
 import { PostCard } from "@/components/post-card"
-import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
-import { Waves, Recycle, RefreshCw } from "lucide-react"
+import { Plus, Waves, Recycle } from "lucide-react"
 import Link from "next/link"
 
 interface Post {
   id: string
-  content: string
+  caption: string
   image_url: string | null
   location: string | null
-  waste_types: string[]
-  weight_kg: number | null
-  points: number
+  waste_type: string[]
+  estimated_weight: number | null
+  points_earned: number
   created_at: string
   user_id: string
   profiles: {
@@ -120,7 +119,7 @@ export default function HomePage() {
   // Show loading while checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Waves className="w-8 h-8 text-ocean-blue animate-pulse" />
@@ -138,29 +137,11 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
-            <Waves className="w-6 h-6 text-ocean-blue" />
-            <h1 className="text-xl font-bold text-gray-900">Skjærgårdshelt</h1>
-            <Recycle className="w-6 h-6 text-forest-green" />
-          </div>
-          <button
-            onClick={fetchPosts}
-            disabled={postsLoading}
-            className="text-gray-600 hover:text-gray-800 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-6 h-6 ${postsLoading ? "animate-spin" : ""}`} />
-          </button>
-        </div>
-      </header>
-
-      {/* Feed */}
+    <div className="min-h-screen pb-20">
       <main className="max-w-md mx-auto px-4 py-6">
+        {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             {error}
             <button onClick={fetchPosts} className="ml-2 underline">
               Prøv igjen
@@ -168,27 +149,39 @@ export default function HomePage() {
           </div>
         )}
 
-        {posts.length === 0 && !error ? (
+        {/* Posts Loading */}
+        {postsLoading && posts.length === 0 && (
           <div className="text-center py-12">
-            <div className="mb-4">
-              <Recycle className="w-16 h-16 text-gray-300 mx-auto" />
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Waves className="w-8 h-8 text-ocean-blue animate-pulse" />
+              <Recycle className="w-8 h-8 text-forest-green animate-pulse" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ingen innlegg ennå</h3>
-            <p className="text-gray-600 mb-4">Bli den første til å dele en kystopprydning!</p>
-            <Link href="/create">
-              <Button className="bg-ocean-blue hover:bg-ocean-blue-dark text-white">Legg til innlegg</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} currentUser={user} onLike={() => handleLike(post.id)} />
-            ))}
+            <p className="text-gray-600">Laster innlegg...</p>
           </div>
         )}
-      </main>
 
-      <Navigation />
+        {/* No Posts */}
+        {!postsLoading && posts.length === 0 && !error && (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🌊</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Ingen innlegg ennå</h3>
+            <p className="text-gray-600 mb-6">Bli den første til å dele en kystopprydding!</p>
+            <Link href="/create">
+              <Button className="bg-ocean-blue hover:bg-ocean-blue-dark text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Opprett første innlegg
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Posts Feed */}
+        <div className="space-y-6">
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} onDelete={(postId) => setPosts(posts.filter((p) => p.id !== postId))} />
+          ))}
+        </div>
+      </main>
     </div>
   )
 }
