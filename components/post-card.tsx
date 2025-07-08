@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Heart, MessageCircle, MapPin, Trash2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/contexts/auth-context"
+import { ShareButton } from "./share-button"
 import Image from "next/image"
 
 interface Post {
@@ -91,8 +92,13 @@ export function PostCard({ post, onDelete }: PostCardProps) {
   const badge = getLevelBadge(post.profiles?.level || 1)
   const canDelete = user?.id === post.user_id
 
+  // Create shareable content
+  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/post/${post.id}` : ""
+  const shareTitle = `${post.profiles?.username} ryddet kysten! 🌊♻️`
+  const shareDescription = `Se hva ${post.profiles?.username} har gjort for å rydde kysten! ${post.caption} Bli med på Skjærgårdshelt og gjør en forskjell! 🇳🇴`
+
   return (
-    <div className="card mb-6">
+    <div className="card mb-6 transition-all duration-300">
       {/* Header */}
       <div className="flex items-center justify-between p-4 pb-3">
         <div className="flex items-center gap-3">
@@ -120,11 +126,14 @@ export function PostCard({ post, onDelete }: PostCardProps) {
           </div>
         </div>
 
-        {canDelete && onDelete && (
-          <button onClick={handleDelete} className="text-red-500 hover:text-red-700 p-1">
-            <Trash2 className="w-5 h-5" />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <ShareButton url={shareUrl} title={shareTitle} description={shareDescription} />
+          {canDelete && onDelete && (
+            <button onClick={handleDelete} className="text-red-500 hover:text-red-700 p-1">
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Image */}

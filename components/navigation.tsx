@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Plus, User, Trophy } from "lucide-react"
+import { Home, Plus, Trophy, User } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -15,20 +15,20 @@ export function Navigation() {
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 safe-area-bottom">
-      <div className="flex justify-around">
+    <nav className="fixed bottom-0 left-0 right-0 nav-glass border-t z-50">
+      <div className="flex justify-around items-center py-2 px-4 max-w-md mx-auto">
         {navItems.map(({ href, icon: Icon, label }) => {
           const isActive = pathname === href
           return (
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
-                isActive ? "text-forest-green bg-green-50" : "text-gray-600 hover:text-forest-green"
+              className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+                isActive ? "text-[#2D5016] bg-white/50" : "text-gray-600 hover:text-[#2D5016] hover:bg-white/30"
               }`}
             >
               <Icon className="w-6 h-6" />
-              <span className="text-xs mt-1">{label}</span>
+              <span className="text-xs font-medium">{label}</span>
             </Link>
           )
         })}
