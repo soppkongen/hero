@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --forest-green: #2d5016;
+  --ocean-blue: #1e3a8a;
+  --light-gray: #f8fafc;
+  --text-dark: #1f2937;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background-color: var(--light-gray);
+    color: var(--text-dark);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    background-color: #2d5016;
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .btn-primary:hover {
+    background-color: #1f3a0f;
+  }
+
+  .btn-secondary {
+    background-color: #1e3a8a;
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .btn-secondary:hover {
+    background-color: #1e40af;
+  }
+
+  .card {
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    border: 1px solid rgb(243 244 246);
+  }
+
+  .input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.5rem;
+    outline: none;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  }
+
+  .input:focus {
+    border-color: transparent;
+    box-shadow: 0 0 0 2px #2d5016;
+  }
+}
+
+/* PWA specific styles */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
