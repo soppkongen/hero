@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase"
 import { PostCard } from "@/components/post-card"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Plus } from "lucide-react"
+import { Waves, Recycle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 
 interface Post {
@@ -122,7 +122,10 @@ export default function HomePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-blue mx-auto mb-4"></div>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Waves className="w-8 h-8 text-ocean-blue animate-pulse" />
+            <Recycle className="w-8 h-8 text-forest-green animate-pulse" />
+          </div>
           <p className="text-gray-600">Laster...</p>
         </div>
       </div>
@@ -135,65 +138,57 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-
-      <main className="max-w-2xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Kystopprydding</h1>
-            <p className="text-gray-600">Se hva kysthelter gjør rundt om i Norge</p>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="flex items-center justify-between px-4 py-4">
+          <div className="flex items-center gap-2">
+            <Waves className="w-6 h-6 text-ocean-blue" />
+            <h1 className="text-xl font-bold text-gray-900">Skjærgårdshelt</h1>
+            <Recycle className="w-6 h-6 text-forest-green" />
           </div>
-          <Link href="/create">
-            <Button className="bg-ocean-blue hover:bg-ocean-blue-dark text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              Ny post
-            </Button>
-          </Link>
+          <button
+            onClick={fetchPosts}
+            disabled={postsLoading}
+            className="text-gray-600 hover:text-gray-800 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-6 h-6 ${postsLoading ? "animate-spin" : ""}`} />
+          </button>
         </div>
+      </header>
 
-        {/* Refresh Button */}
-        <div className="mb-6">
-          <Button onClick={fetchPosts} disabled={postsLoading} variant="outline" className="w-full bg-transparent">
-            <RefreshCw className={`w-4 h-4 mr-2 ${postsLoading ? "animate-spin" : ""}`} />
-            {postsLoading ? "Oppdaterer..." : "Oppdater innlegg"}
-          </Button>
-        </div>
-
-        {/* Error Message */}
-        {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">{error}</div>}
-
-        {/* Posts Loading */}
-        {postsLoading && posts.length === 0 && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-blue mx-auto mb-4"></div>
-            <p className="text-gray-600">Laster innlegg...</p>
+      {/* Feed */}
+      <main className="max-w-md mx-auto px-4 py-6">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
+            {error}
+            <button onClick={fetchPosts} className="ml-2 underline">
+              Prøv igjen
+            </button>
           </div>
         )}
 
-        {/* No Posts */}
-        {!postsLoading && posts.length === 0 && (
+        {posts.length === 0 && !error ? (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4">🌊</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Ingen innlegg ennå</h3>
-            <p className="text-gray-600 mb-6">Bli den første til å dele en kystopprydding!</p>
+            <div className="mb-4">
+              <Recycle className="w-16 h-16 text-gray-300 mx-auto" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ingen innlegg ennå</h3>
+            <p className="text-gray-600 mb-4">Bli den første til å dele en kystopprydning!</p>
             <Link href="/create">
-              <Button className="bg-ocean-blue hover:bg-ocean-blue-dark text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Opprett første innlegg
-              </Button>
+              <Button className="bg-ocean-blue hover:bg-ocean-blue-dark text-white">Legg til innlegg</Button>
             </Link>
           </div>
+        ) : (
+          <div className="space-y-6">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} currentUser={user} onLike={() => handleLike(post.id)} />
+            ))}
+          </div>
         )}
-
-        {/* Posts Feed */}
-        <div className="space-y-6">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} currentUser={user} onLike={() => handleLike(post.id)} />
-          ))}
-        </div>
       </main>
+
+      <Navigation />
     </div>
   )
 }
