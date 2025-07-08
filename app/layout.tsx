@@ -53,14 +53,14 @@ export const metadata: Metadata = {
       "Rydd én strand, forandre alt. Få poeng for innsatsen, bygg fellesskap og vis verden hva du gjør for et renere hav. Sammen bygger vi et renere Norge! 🇳🇴",
     images: [
       {
-        url: "/og-image.png",
+        url: "https://skjaergardshelt.vercel.app/og-image.png",
         width: 1200,
         height: 630,
         alt: "Skjærgårdshelt - Coastal cleanup heroes making a difference",
         type: "image/png",
       },
       {
-        url: "/og-image-square.png",
+        url: "https://skjaergardshelt.vercel.app/og-image-square.png",
         width: 1080,
         height: 1080,
         alt: "Skjærgårdshelt - Join the coastal cleanup movement",
@@ -78,9 +78,33 @@ export const metadata: Metadata = {
     description:
       "Rydd én strand, forandre alt. Få poeng for innsatsen, bygg fellesskap og vis verden hva du gjør for et renere hav. 🇳🇴",
     images: {
-      url: "/og-image.png",
+      url: "https://skjaergardshelt.vercel.app/og-image.png",
       alt: "Skjærgårdshelt - Coastal cleanup heroes making a difference",
     },
+  },
+
+  // Enhanced icons
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    other: [
+      {
+        rel: "android-chrome",
+        url: "/android-chrome-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        rel: "android-chrome",
+        url: "/android-chrome-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
+    ],
   },
 
   // Additional social media tags
@@ -88,12 +112,15 @@ export const metadata: Metadata = {
     // Facebook specific
     "fb:app_id": "skjaergardshelt",
 
-    // Additional Open Graph
+    // Additional Open Graph with full URLs
+    "og:image": "https://skjaergardshelt.vercel.app/og-image.png",
+    "og:image:secure_url": "https://skjaergardshelt.vercel.app/og-image.png",
     "og:image:width": "1200",
     "og:image:height": "630",
     "og:image:type": "image/png",
 
-    // Twitter specific
+    // Twitter specific with full URLs
+    "twitter:image": "https://skjaergardshelt.vercel.app/og-image.png",
     "twitter:image:width": "1200",
     "twitter:image:height": "630",
 
@@ -137,8 +164,14 @@ export default function RootLayout({
   return (
     <html lang="no">
       <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* Favicon and app icons */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
+        <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <link rel="manifest" href="/manifest.json" />
+
+        {/* PWA and mobile app settings */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Skjærgårdshelt" />
