@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
@@ -7,6 +7,14 @@ import { Navigation } from "@/components/navigation"
 import { Header } from "@/components/header"
 
 const inter = Inter({ subsets: ["latin"] })
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#2D5016",
+}
 
 export const metadata: Metadata = {
   title: {
@@ -37,8 +45,6 @@ export const metadata: Metadata = {
     telephone: false,
   },
   manifest: "/manifest.json",
-  themeColor: "#2D5016",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   generator: "v0.dev",
   metadataBase: new URL("https://skjaergardshelt.vercel.app"),
 
@@ -129,7 +135,6 @@ export const metadata: Metadata = {
     "application-name": "Skjærgårdshelt",
 
     // Additional SEO
-    "theme-color": "#2D5016",
     "msapplication-TileColor": "#2D5016",
     "msapplication-navbutton-color": "#2D5016",
     "apple-mobile-web-app-status-bar-style": "black-translucent",
