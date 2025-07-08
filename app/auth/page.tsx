@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { Waves, Recycle, User, AlertCircle } from "lucide-react"
@@ -16,8 +16,15 @@ export default function AuthPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
-  const { signIn, signUp, createTestUser } = useAuth()
+  const { user, signIn, signUp, createTestUser } = useAuth()
   const router = useRouter()
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.push("/")
+    }
+  }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,7 +35,7 @@ export default function AuthPage() {
     try {
       if (isLogin) {
         await signIn(email, password)
-        router.push("/")
+        // Redirect will happen automatically via useEffect when user state changes
       } else {
         await signUp(email, password, username)
         setSuccess("Bruker opprettet! Du kan nå logge inn.")
@@ -51,7 +58,7 @@ export default function AuthPage() {
     try {
       await createTestUser()
       setSuccess("Testbruker opprettet og logget inn!")
-      router.push("/")
+      // Redirect will happen automatically via useEffect when user state changes
     } catch (err: any) {
       console.error("Test user creation error:", err)
       setError(err.message || "Kunne ikke opprette testbruker")
@@ -64,6 +71,18 @@ export default function AuthPage() {
     setEmail("test@example.com")
     setPassword("testpassword123")
     setUsername("kystopprydder")
+  }
+
+  // Don't render if user is already logged in (will redirect)
+  if (user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-forest-green to-ocean-blue flex items-center justify-center p-4">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Omdirigerer...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

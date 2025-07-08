@@ -5,22 +5,27 @@ import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
 import { PostCard } from "@/components/post-card"
 import { Navigation } from "@/components/navigation"
-import { Waves, Recycle, RefreshCw } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { RefreshCw, Plus } from "lucide-react"
+import Link from "next/link"
 
 interface Post {
   id: string
-  caption: string
-  image_url: string
+  content: string
+  image_url: string | null
   location: string | null
-  waste_type: string[]
-  estimated_weight: number | null
-  points_earned: number
+  waste_types: string[]
+  weight_kg: number | null
+  points: number
   created_at: string
+  user_id: string
   profiles: {
+    id: string
     username: string
+    full_name: string
     avatar_url: string | null
     level: number
+    points: number
   }
   likes: { user_id: string }[]
 }
@@ -29,136 +34,166 @@ export default function HomePage() {
   const { user, loading } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
   const [postsLoading, setPostsLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState("")
-  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
 
+  // Redirect to splash page if not authenticated
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/auth")
-      return
+      window.location.href = "/velkommen"
     }
+  }, [user, loading])
 
-    if (user) {
-      fetchPosts()
-    }
-  }, [user, loading, router])
-
-  const fetchPosts = async (showRefreshing = false) => {
-    if (showRefreshing) setRefreshing(true)
-    setError("")
-
+  const fetchPosts = async () => {
     try {
+      setPostsLoading(true)
+      setError(null)
       console.log("Fetching posts...")
 
-      /* Embedded select now works because the FK exists */
       const { data, error } = await supabase
         .from("posts")
         .select(
           `
-            *,
-            profiles (
-              username,
-              avatar_url,
-              level
-            ),
-            likes (
-              user_id
-            )
-          `,
+          *,
+          profiles (
+            id,
+            username,
+            full_name,
+            avatar_url,
+            level,
+            points
+          ),
+          likes (user_id)
+        `,
         )
         .order("created_at", { ascending: false })
 
       if (error) {
         console.error("Error fetching posts:", error)
-        throw error
+        setError(`Error fetching posts: ${error.message}`)
+        return
       }
 
-      console.log("Posts fetched:", data?.length || 0)
+      console.log("Posts fetched successfully:", data?.length || 0)
       setPosts(data || [])
-    } catch (error: any) {
-      console.error("Error fetching posts:", error)
-      setError("Kunne ikke laste innlegg")
+    } catch (err: any) {
+      console.error("Unexpected error:", err)
+      setError(`Unexpected error: ${err.message}`)
     } finally {
       setPostsLoading(false)
-      setRefreshing(false)
     }
   }
 
-  const handleDeletePost = (postId: string) => {
-    setPosts(posts.filter((post) => post.id !== postId))
+  useEffect(() => {
+    if (user) {
+      fetchPosts()
+    }
+  }, [user])
+
+  const handleLike = async (postId: string) => {
+    if (!user) return
+
+    try {
+      // Check if already liked
+      const existingLike = posts.find((p) => p.id === postId)?.likes.find((like) => like.user_id === user.id)
+
+      if (existingLike) {
+        // Unlike
+        await supabase.from("likes").delete().match({
+          post_id: postId,
+          user_id: user.id,
+        })
+      } else {
+        // Like
+        await supabase.from("likes").insert({
+          post_id: postId,
+          user_id: user.id,
+        })
+      }
+
+      // Refresh posts to update like counts
+      fetchPosts()
+    } catch (error) {
+      console.error("Error toggling like:", error)
+    }
   }
 
-  const handleRefresh = () => {
-    fetchPosts(true)
-  }
-
-  if (loading || postsLoading) {
+  // Show loading while checking authentication
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Waves className="w-8 h-8 text-[#1E3A8A] animate-pulse" />
-            <Recycle className="w-8 h-8 text-[#2D5016] animate-pulse" />
-          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-blue mx-auto mb-4"></div>
           <p className="text-gray-600">Laster...</p>
         </div>
       </div>
     )
   }
 
+  // Don't render anything if not authenticated (will redirect)
+  if (!user) {
+    return null
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
-            <Waves className="w-6 h-6 text-[#1E3A8A]" />
-            <h1 className="text-xl font-bold text-gray-900">Skjærgårdshelt</h1>
-            <Recycle className="w-6 h-6 text-[#2D5016]" />
-          </div>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="text-gray-600 hover:text-gray-800 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-6 h-6 ${refreshing ? "animate-spin" : ""}`} />
-          </button>
-        </div>
-      </header>
-
-      {/* Feed */}
-      <main className="max-w-md mx-auto px-4 py-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
-            {error}
-            <button onClick={handleRefresh} className="ml-2 underline">
-              Prøv igjen
-            </button>
-          </div>
-        )}
-
-        {posts.length === 0 && !error ? (
-          <div className="text-center py-12">
-            <div className="mb-4">
-              <Recycle className="w-16 h-16 text-gray-300 mx-auto" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ingen innlegg ennå</h3>
-            <p className="text-gray-600 mb-4">Bli den første til å dele en kystopprydning!</p>
-            <button onClick={() => router.push("/create")} className="btn-primary">
-              Legg til innlegg
-            </button>
-          </div>
-        ) : (
-          <div>
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} onDelete={handleDeletePost} />
-            ))}
-          </div>
-        )}
-      </main>
-
+    <div className="min-h-screen bg-gray-50">
       <Navigation />
+
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Kystopprydding</h1>
+            <p className="text-gray-600">Se hva kysthelter gjør rundt om i Norge</p>
+          </div>
+          <Link href="/create">
+            <Button className="bg-ocean-blue hover:bg-ocean-blue-dark text-white">
+              <Plus className="w-4 h-4 mr-2" />
+              Ny post
+            </Button>
+          </Link>
+        </div>
+
+        {/* Refresh Button */}
+        <div className="mb-6">
+          <Button onClick={fetchPosts} disabled={postsLoading} variant="outline" className="w-full bg-transparent">
+            <RefreshCw className={`w-4 h-4 mr-2 ${postsLoading ? "animate-spin" : ""}`} />
+            {postsLoading ? "Oppdaterer..." : "Oppdater innlegg"}
+          </Button>
+        </div>
+
+        {/* Error Message */}
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">{error}</div>}
+
+        {/* Posts Loading */}
+        {postsLoading && posts.length === 0 && (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-blue mx-auto mb-4"></div>
+            <p className="text-gray-600">Laster innlegg...</p>
+          </div>
+        )}
+
+        {/* No Posts */}
+        {!postsLoading && posts.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🌊</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Ingen innlegg ennå</h3>
+            <p className="text-gray-600 mb-6">Bli den første til å dele en kystopprydding!</p>
+            <Link href="/create">
+              <Button className="bg-ocean-blue hover:bg-ocean-blue-dark text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Opprett første innlegg
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Posts Feed */}
+        <div className="space-y-6">
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} currentUser={user} onLike={() => handleLike(post.id)} />
+          ))}
+        </div>
+      </main>
     </div>
   )
 }
