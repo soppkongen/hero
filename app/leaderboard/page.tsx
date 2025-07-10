@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
 import { Navigation } from "@/components/navigation"
+import { Header } from "@/components/header"
 import { Trophy, Medal, Award, Crown } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -133,14 +134,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen pb-20">
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
-        <div className="flex items-center justify-center py-4">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-6 h-6 text-yellow-500" />
-            <h1 className="text-lg font-semibold text-gray-900">Toppliste</h1>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="max-w-md mx-auto px-4 py-6">
         {/* Current User Rank */}

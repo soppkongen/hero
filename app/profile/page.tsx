@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
 import { PostCard } from "@/components/post-card"
 import { Navigation } from "@/components/navigation"
+import { Header } from "@/components/header"
 import { Settings, Trophy, Calendar, LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -150,14 +151,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen pb-20">
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
-        <div className="flex items-center justify-between px-4 py-4">
-          <h1 className="text-lg font-semibold text-gray-900">Profil</h1>
-          <button onClick={handleSignOut} className="text-gray-600 hover:text-red-600 transition-colors">
-            <LogOut className="w-6 h-6" />
-          </button>
-        </div>
-      </header>
+      <Header />
 
       <main className="max-w-md mx-auto px-4 py-6">
         {/* Profile Header */}
@@ -192,6 +186,10 @@ export default function ProfilePage() {
                 <span className="text-sm font-semibold text-forest-green">{profile.points} poeng</span>
               </div>
             </div>
+
+            <button onClick={handleSignOut} className="text-gray-600 hover:text-red-600 transition-colors p-2">
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
 
           {profile.bio && <p className="text-gray-700 mb-4">{profile.bio}</p>}

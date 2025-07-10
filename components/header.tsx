@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { Waves, Recycle, RefreshCw, Info } from "lucide-react"
+import { Waves, Recycle, RefreshCw } from "lucide-react"
 import { usePathname } from "next/navigation"
+import { MobileMenu } from "@/components/mobile-menu"
 
 interface HeaderProps {
   onRefresh?: () => void
@@ -36,9 +37,7 @@ export function Header({ onRefresh }: HeaderProps) {
             </button>
           )}
 
-          <Link href="/om" className="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Om oss">
-            <Info className="w-5 h-5 text-gray-600" />
-          </Link>
+          <MobileMenu />
         </div>
       </div>
     </header>

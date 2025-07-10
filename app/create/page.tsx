@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { InlineWeightEstimator } from "@/components/inline-weight-estimator"
+import { Header } from "@/components/header"
 import {
   Camera,
   Upload,
@@ -350,15 +351,7 @@ export default function CreatePage() {
         </div>
       )}
 
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
-        <div className="flex items-center justify-center py-4">
-          <div className="flex items-center gap-2">
-            <Camera className="w-6 h-6 text-forest-green" />
-            <h1 className="text-lg font-semibold text-gray-900">Opprett innlegg</h1>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="max-w-md mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="space-y-6">

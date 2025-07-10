@@ -5,7 +5,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
 import { PostCard } from "@/components/post-card"
 import { Button } from "@/components/ui/button"
-import { Plus, Waves, Recycle, RefreshCw } from "lucide-react"
+import { Header } from "@/components/header"
+import { Plus, Waves, Recycle } from "lucide-react"
 import Link from "next/link"
 
 interface Post {
@@ -113,23 +114,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen pb-20">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
-        <div className="flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
-            <Waves className="w-6 h-6 text-ocean-blue" />
-            <h1 className="text-lg font-semibold text-gray-900">Hjem</h1>
-          </div>
-          <button
-            onClick={fetchPosts}
-            disabled={postsLoading}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-            title="Oppdater feed"
-          >
-            <RefreshCw className={`w-5 h-5 text-gray-600 ${postsLoading ? "animate-spin" : ""}`} />
-          </button>
-        </div>
-      </header>
+      <Header onRefresh={fetchPosts} />
 
       <main className="max-w-md mx-auto px-4 py-6">
         {/* Error Message */}
@@ -176,16 +161,6 @@ export default function HomePage() {
             <PostCard key={post.id} post={post} onDelete={handleDeletePost} />
           ))}
         </div>
-
-        {/* Loading more indicator */}
-        {postsLoading && posts.length > 0 && (
-          <div className="text-center py-4">
-            <div className="inline-flex items-center gap-2 text-gray-500">
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span className="text-sm">Oppdaterer...</span>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   )
