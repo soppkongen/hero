@@ -1,0 +1,58 @@
+{
+  "categories": [
+    {
+      "code": "EAL-01",
+      "name": "Plastflasker og beholdere",
+      "description": "Plastflasker, plastbeholdere og lignende",
+      "waste_type": "plastic_bottles"
+    },
+    {
+      "code": "EAL-02",
+      "name": "Papir og kartong",
+      "description": "Aviser, magasiner, kartong og papirprodukter",
+      "waste_type": "paper"
+    },
+    {
+      "code": "EAL-03",
+      "name": "Metall dåser og beholdere",
+      "description": "Aluminiumsdåser, metallbeholdere",
+      "waste_type": "metal_cans"
+    },
+    {
+      "code": "EAL-04",
+      "name": "Glassflasker og glass",
+      "description": "Glassflasker, glassbeholdere",
+      "waste_type": "glass"
+    },
+    {
+      "code": "EAL-05",
+      "name": "Tekstiler og klær",
+      "description": "Klær, tekstiler, sko",
+      "waste_type": "textile"
+    },
+    {
+      "code": "EAL-06",
+      "name": "Elektronikk",
+      "description": "Elektroniske produkter, kabler, batterier",
+      "waste_type": "electronics"
+    },
+    {
+      "code": "EAL-07",
+      "name": "Organisk avfall",
+      "description": "Matrester, organisk materiale",
+      "waste_type": "organic_waste"
+    },
+    {
+      "code": "EAL-08",
+      "name": "Farlig avfall",
+      "description": "Kjemikalier, maling, batterier",
+      "waste_type": "hazardous"
+    },
+    {
+      "code": "EAL-09",
+      "name": "Blandet avfall",
+      "description": "Blandet søppel og ikke-kategorisert avfall",
+      "waste_type": "mixed_trash"
+    }
+  ]
+}

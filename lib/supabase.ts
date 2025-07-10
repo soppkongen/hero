@@ -112,6 +112,102 @@ export type Database = {
           created_at?: string
         }
       }
+      bag_weights: {
+        Row: {
+          bag_size: string
+          avg_weight_kg: number
+          created_at: string
+        }
+        Insert: {
+          bag_size: string
+          avg_weight_kg: number
+          created_at?: string
+        }
+        Update: {
+          bag_size?: string
+          avg_weight_kg?: number
+          created_at?: string
+        }
+      }
+      density_factors: {
+        Row: {
+          waste_type: string
+          density_kg_m3: number
+          created_at: string
+        }
+        Insert: {
+          waste_type: string
+          density_kg_m3: number
+          created_at?: string
+        }
+        Update: {
+          waste_type?: string
+          density_kg_m3?: number
+          created_at?: string
+        }
+      }
+      waste_pickup: {
+        Row: {
+          id: string
+          user_id: string
+          post_id: string | null
+          eal_code: string | null
+          waste_type: string | null
+          estimation_method: string
+          estimated_weight_kg: number | null
+          confidence_pct: number | null
+          bag_size: string | null
+          bag_count: number | null
+          volume_length_m: number | null
+          volume_width_m: number | null
+          volume_height_m: number | null
+          photo_url: string | null
+          reference_object: string | null
+          manual_override_kg: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          post_id?: string | null
+          eal_code?: string | null
+          waste_type?: string | null
+          estimation_method: string
+          estimated_weight_kg?: number | null
+          confidence_pct?: number | null
+          bag_size?: string | null
+          bag_count?: number | null
+          volume_length_m?: number | null
+          volume_width_m?: number | null
+          volume_height_m?: number | null
+          photo_url?: string | null
+          reference_object?: string | null
+          manual_override_kg?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          post_id?: string | null
+          eal_code?: string | null
+          waste_type?: string | null
+          estimation_method?: string
+          estimated_weight_kg?: number | null
+          confidence_pct?: number | null
+          bag_size?: string | null
+          bag_count?: number | null
+          volume_length_m?: number | null
+          volume_width_m?: number | null
+          volume_height_m?: number | null
+          photo_url?: string | null
+          reference_object?: string | null
+          manual_override_kg?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
   }
 }

@@ -1,0 +1,36 @@
+{
+  "name": "Skjærgårdshelt - Coastal Cleanup Hero",
+  "short_name": "Skjærgårdshelt",
+  "description": "Connect with coastal cleanup heroes across Norway and gamify waste collection",
+  "start_url": "/velkommen",
+  "display": "standalone",
+  "background_color": "#2D5016",
+  "theme_color": "#2D5016",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "no",
+  "categories": ["lifestyle", "social", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

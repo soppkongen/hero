@@ -7,8 +7,10 @@ import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
 import { compressImage, validateImageFile } from "@/lib/image-utils"
 import { Navigation } from "@/components/navigation"
-import { Camera, MapPin, Trash2, X } from "lucide-react"
+import { InlineWeightEstimator } from "@/components/inline-weight-estimator"
+import { Camera, MapPin, Trash2, X, Calculator, Edit3 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
 import Image from "next/image"
 
 const wasteTypes = ["Plast", "Glass", "Metall", "Papir", "Sigarettstumper", "Fiskeutstyr", "Tau", "Emballasje", "Annet"]
@@ -26,6 +28,14 @@ export default function CreatePostPage() {
   const [estimatedWeight, setEstimatedWeight] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  // Weight estimation states
+  const [useWeightEstimator, setUseWeightEstimator] = useState(false)
+  const [estimationData, setEstimationData] = useState<{
+    weight: number
+    confidence: number
+    method: string
+  } | null>(null)
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -56,6 +66,12 @@ export default function CreatePostPage() {
     setSelectedWasteTypes((prev) =>
       prev.includes(wasteType) ? prev.filter((type) => type !== wasteType) : [...prev, wasteType],
     )
+  }
+
+  const handleWeightEstimated = (weight: number, confidence: number, method: string) => {
+    setEstimationData({ weight, confidence, method })
+    setEstimatedWeight(weight.toString())
+    setUseWeightEstimator(false)
   }
 
   const calculatePoints = () => {
@@ -89,6 +105,25 @@ export default function CreatePostPage() {
 
     console.log("Image uploaded successfully:", publicUrl)
     return publicUrl
+  }
+
+  const saveEstimationData = async (postId: string) => {
+    if (!estimationData || !user) return
+
+    try {
+      await supabase.from("waste_pickup").insert({
+        user_id: user.id,
+        post_id: postId,
+        waste_type: selectedWasteTypes.join(", "),
+        estimation_method: estimationData.method,
+        estimated_weight_kg: estimationData.weight,
+        confidence_pct: estimationData.confidence,
+        ...(estimationData.method === "bag" && { bag_count: 1 }), // Could be enhanced to store actual values
+      })
+    } catch (error) {
+      console.error("Error saving estimation data:", error)
+      // Don't fail the post creation if estimation data fails to save
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,6 +164,11 @@ export default function CreatePostPage() {
       }
 
       console.log("Post created successfully:", data)
+
+      // Save estimation data if available
+      if (data && data[0]) {
+        await saveEstimationData(data[0].id)
+      }
 
       // Redirect to home page
       router.push("/")
@@ -251,21 +291,60 @@ export default function CreatePostPage() {
             </div>
           </div>
 
-          {/* Estimated Weight */}
+          {/* Enhanced Weight Section */}
           <div className="card p-4">
-            <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-2">
-              Estimert vekt (kg)
-            </label>
-            <input
-              id="weight"
-              type="number"
-              step="0.1"
-              min="0"
-              value={estimatedWeight}
-              onChange={(e) => setEstimatedWeight(e.target.value)}
-              placeholder="F.eks. 2.5"
-              className="input"
-            />
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-gray-700">Estimert vekt (kg)</label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={!useWeightEstimator ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setUseWeightEstimator(false)}
+                  className="text-xs"
+                >
+                  <Edit3 className="w-3 h-3 mr-1" />
+                  Manuell
+                </Button>
+                <Button
+                  type="button"
+                  variant={useWeightEstimator ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setUseWeightEstimator(true)}
+                  className="text-xs"
+                >
+                  <Calculator className="w-3 h-3 mr-1" />
+                  Estimator
+                </Button>
+              </div>
+            </div>
+
+            {!useWeightEstimator ? (
+              <div className="space-y-2">
+                <input
+                  id="weight"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={estimatedWeight}
+                  onChange={(e) => setEstimatedWeight(e.target.value)}
+                  placeholder="F.eks. 2.5"
+                  className="input"
+                />
+                {estimationData && (
+                  <div className="text-xs text-green-600 flex items-center gap-1">
+                    <Calculator className="w-3 h-3" />
+                    Estimert med {estimationData.method}-metode (±{estimationData.confidence}%)
+                  </div>
+                )}
+              </div>
+            ) : (
+              <InlineWeightEstimator
+                wasteTypes={selectedWasteTypes}
+                onWeightEstimated={handleWeightEstimated}
+                onClose={() => setUseWeightEstimator(false)}
+              />
+            )}
           </div>
 
           {/* Points Preview */}
