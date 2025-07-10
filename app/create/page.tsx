@@ -6,14 +6,22 @@ import { useState, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
 import { compressImage, validateImageFile } from "@/lib/image-utils"
+import { DataCollectionService, type CleanupReportData, type WasteCategory } from "@/lib/data-collection"
 import { Navigation } from "@/components/navigation"
 import { InlineWeightEstimator } from "@/components/inline-weight-estimator"
-import { Camera, MapPin, Trash2, X, Calculator, Edit3 } from "lucide-react"
+import { Camera, MapPin, Trash2, X, Calculator, Edit3, Users, Clock, Cloud } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
 
 const wasteTypes = ["Plast", "Glass", "Metall", "Papir", "Sigarettstumper", "Fiskeutstyr", "Tau", "Emballasje", "Annet"]
+
+const weatherOptions = ["Solskinn", "Delvis skyet", "Overskyet", "Lett regn", "Kraftig regn", "Vind", "Stille"]
+
+const tideOptions = ["Lavvann", "Stigende", "Høyvann", "Fallende", "Ukjent"]
 
 export default function CreatePostPage() {
   const { user } = useAuth()
@@ -29,6 +37,15 @@ export default function CreatePostPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
+  // Enhanced data collection fields
+  const [volunteerCount, setVolunteerCount] = useState<number>(1)
+  const [cleanupDuration, setCleanupDuration] = useState<number>(60)
+  const [organizationName, setOrganizationName] = useState("")
+  const [weatherConditions, setWeatherConditions] = useState("")
+  const [tideLevel, setTideLevel] = useState("")
+  const [accessibilityRating, setAccessibilityRating] = useState<number>(3)
+  const [showAdvancedFields, setShowAdvancedFields] = useState(false)
+
   // Weight estimation states
   const [useWeightEstimator, setUseWeightEstimator] = useState(false)
   const [estimationData, setEstimationData] = useState<{
@@ -41,6 +58,8 @@ export default function CreatePostPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    console.log("Selected file:", file.name, file.type, file.size)
+
     const validationError = validateImageFile(file)
     if (validationError) {
       setError(validationError)
@@ -51,34 +70,80 @@ export default function CreatePostPage() {
     setLoading(true)
 
     try {
+      console.log("Starting image compression...")
       const compressed = await compressImage(file, 800, 800, 0.8)
+      console.log("Image compressed successfully:", compressed.width, "x", compressed.height)
+
       setImage(compressed.dataUrl)
       setImageFile(compressed.file)
+
+      // Log activity
+      if (user) {
+        DataCollectionService.logUserActivity({
+          userId: user.id,
+          activityType: "image_uploaded",
+          activityData: {
+            fileSize: file.size,
+            fileType: file.type,
+            compressed: true,
+          },
+        })
+      }
     } catch (err) {
       console.error("Image compression error:", err)
-      setError("Kunne ikke behandle bildet")
+      setError(`Kunne ikke behandle bildet: ${err instanceof Error ? err.message : "Ukjent feil"}`)
     } finally {
       setLoading(false)
     }
   }
 
   const handleWasteTypeToggle = (wasteType: string) => {
-    setSelectedWasteTypes((prev) =>
-      prev.includes(wasteType) ? prev.filter((type) => type !== wasteType) : [...prev, wasteType],
-    )
+    setSelectedWasteTypes((prev) => {
+      const newTypes = prev.includes(wasteType) ? prev.filter((type) => type !== wasteType) : [...prev, wasteType]
+
+      // Log activity
+      if (user) {
+        DataCollectionService.logUserActivity({
+          userId: user.id,
+          activityType: "waste_type_selected",
+          activityData: {
+            wasteType,
+            action: prev.includes(wasteType) ? "removed" : "added",
+            totalSelected: newTypes.length,
+          },
+        })
+      }
+
+      return newTypes
+    })
   }
 
   const handleWeightEstimated = (weight: number, confidence: number, method: string) => {
     setEstimationData({ weight, confidence, method })
     setEstimatedWeight(weight.toString())
     setUseWeightEstimator(false)
+
+    // Log weight estimation activity
+    if (user) {
+      DataCollectionService.logUserActivity({
+        userId: user.id,
+        activityType: "weight_estimated",
+        activityData: {
+          method,
+          estimatedWeight: weight,
+          confidence,
+          wasteTypes: selectedWasteTypes,
+        },
+      })
+    }
   }
 
   const calculatePoints = () => {
     const basePoints = 10
     const weightBonus = Math.floor(Number.parseFloat(estimatedWeight || "0") * 5)
     const typeBonus = selectedWasteTypes.length * 2
-    return basePoints + weightBonus + typeBonus
+    const volunteerBonus = Math.max(0, (volunteerCount - 1) * 5) // Bonus for group cleanups
+    return basePoints + weightBonus + typeBonus + volunteerBonus
   }
 
   const uploadImageToSupabase = async (file: File): Promise<string> => {
@@ -126,6 +191,38 @@ export default function CreatePostPage() {
     }
   }
 
+  const createComprehensiveReport = async (postId: string, imageUrl: string) => {
+    if (!user) return
+
+    // Prepare waste categories
+    const wasteCategories: WasteCategory[] = selectedWasteTypes.map((type) => ({
+      type,
+      weight: estimatedWeight ? Number.parseFloat(estimatedWeight) / selectedWasteTypes.length : undefined,
+      unit: "kg" as const,
+    }))
+
+    // Create comprehensive cleanup report
+    const reportData: CleanupReportData = {
+      postId,
+      userId: user.id,
+      locationName: location.trim() || undefined,
+      cleanupDate: new Date(),
+      cleanupDurationMinutes: cleanupDuration,
+      volunteerCount,
+      organizationName: organizationName.trim() || undefined,
+      wasteCategories,
+      totalWeightKg: estimatedWeight ? Number.parseFloat(estimatedWeight) : undefined,
+      weatherConditions: weatherConditions || undefined,
+      tideLevel: tideLevel || undefined,
+      accessibilityRating,
+      afterPhotos: [imageUrl], // Main post image as after photo
+      estimationMethod: estimationData?.method,
+      estimationConfidence: estimationData?.confidence,
+    }
+
+    await DataCollectionService.createCleanupReport(reportData)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !imageFile || !caption.trim()) {
@@ -165,9 +262,27 @@ export default function CreatePostPage() {
 
       console.log("Post created successfully:", data)
 
-      // Save estimation data if available
       if (data && data[0]) {
+        // Save estimation data if available
         await saveEstimationData(data[0].id)
+
+        // Create comprehensive report for future API submission
+        await createComprehensiveReport(data[0].id, imageUrl)
+
+        // Log post creation activity
+        await DataCollectionService.logUserActivity({
+          userId: user.id,
+          activityType: "post_created",
+          activityData: {
+            postId: data[0].id,
+            location: location.trim(),
+            wasteTypes: selectedWasteTypes,
+            estimatedWeight: estimatedWeight ? Number.parseFloat(estimatedWeight) : null,
+            volunteerCount,
+            hasEstimation: !!estimationData,
+            pointsEarned: calculatePoints(),
+          },
+        })
       }
 
       // Redirect to home page
@@ -270,6 +385,124 @@ export default function CreatePostPage() {
             />
           </div>
 
+          {/* Basic Cleanup Info */}
+          <div className="card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-gray-700">Opprydningsinfo</label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAdvancedFields(!showAdvancedFields)}
+                className="text-xs"
+              >
+                {showAdvancedFields ? "Skjul detaljer" : "Vis detaljer"}
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="volunteers" className="text-sm flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  Antall personer
+                </Label>
+                <Input
+                  id="volunteers"
+                  type="number"
+                  min="1"
+                  value={volunteerCount}
+                  onChange={(e) => setVolunteerCount(Number.parseInt(e.target.value) || 1)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="duration" className="text-sm flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  Varighet (min)
+                </Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  min="5"
+                  step="5"
+                  value={cleanupDuration}
+                  onChange={(e) => setCleanupDuration(Number.parseInt(e.target.value) || 60)}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            {showAdvancedFields && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <Label htmlFor="organization" className="text-sm">
+                    Organisasjon (valgfritt)
+                  </Label>
+                  <Input
+                    id="organization"
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                    placeholder="F.eks. Hold Norge Rent"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-sm flex items-center gap-1">
+                      <Cloud className="w-3 h-3" />
+                      Vær
+                    </Label>
+                    <Select value={weatherConditions} onValueChange={setWeatherConditions}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Velg vær" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {weatherOptions.map((weather) => (
+                          <SelectItem key={weather} value={weather}>
+                            {weather}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm">Tidevann</Label>
+                    <Select value={tideLevel} onValueChange={setTideLevel}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Velg tide" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tideOptions.map((tide) => (
+                          <SelectItem key={tide} value={tide}>
+                            {tide}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm">Tilgjengelighet (1-5): {accessibilityRating}</Label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    value={accessibilityRating}
+                    onChange={(e) => setAccessibilityRating(Number.parseInt(e.target.value))}
+                    className="w-full mt-1"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>Vanskelig</span>
+                    <span>Lett</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Waste Types */}
           <div className="card p-4">
             <label className="block text-sm font-medium text-gray-700 mb-3">Type søppel</label>
@@ -353,7 +586,7 @@ export default function CreatePostPage() {
               <span className="text-sm font-medium text-green-800">Poeng du vil få:</span>
               <span className="text-lg font-bold text-green-600">+{calculatePoints()}</span>
             </div>
-            <p className="text-xs text-green-600 mt-1">Basert på vekt, type søppel og grunnpoeng</p>
+            <p className="text-xs text-green-600 mt-1">Basert på vekt, type søppel, antall personer og grunnpoeng</p>
           </div>
 
           {error && (

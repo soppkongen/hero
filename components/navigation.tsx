@@ -4,19 +4,19 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Plus, Trophy, User } from "lucide-react"
 
-const navItems = [
-  { href: "/", icon: Home, label: "Hjem" },
-  { href: "/create", icon: Plus, label: "Opprett" },
-  { href: "/leaderboard", icon: Trophy, label: "Toppliste" },
-  { href: "/profile", icon: User, label: "Profil" },
-]
-
-export function Navigation() {
+export default function Navigation() {
   const pathname = usePathname()
+
+  const navItems = [
+    { href: "/", icon: Home, label: "Hjem" },
+    { href: "/create", icon: Plus, label: "Opprett" },
+    { href: "/leaderboard", icon: Trophy, label: "Toppliste" },
+    { href: "/profile", icon: User, label: "Profil" },
+  ]
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="flex items-center justify-around py-2">
+      <div className="flex justify-around items-center py-2">
         {navItems.map(({ href, icon: Icon, label }) => {
           const isActive = pathname === href
           return (
@@ -37,5 +37,4 @@ export function Navigation() {
   )
 }
 
-// Also export as default for flexibility
-export default Navigation
+export { Navigation }

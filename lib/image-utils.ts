@@ -14,61 +14,101 @@ export async function compressImage(
   return new Promise((resolve, reject) => {
     const canvas = document.createElement("canvas")
     const ctx = canvas.getContext("2d")
+
+    if (!ctx) {
+      reject(new Error("Could not get canvas context"))
+      return
+    }
+
     const img = new Image()
 
+    // Set crossOrigin before setting src
     img.crossOrigin = "anonymous"
 
     img.onload = () => {
-      // Calculate new dimensions
-      let { width, height } = img
+      try {
+        // Calculate new dimensions
+        let { width, height } = img
 
-      if (width > height) {
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width
-          width = maxWidth
-        }
-      } else {
-        if (height > maxHeight) {
-          width = (width * maxHeight) / height
-          height = maxHeight
-        }
-      }
-
-      // Set canvas dimensions
-      canvas.width = width
-      canvas.height = height
-
-      // Draw and compress
-      ctx?.drawImage(img, 0, 0, width, height)
-
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            reject(new Error("Failed to compress image"))
-            return
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width
+            width = maxWidth
           }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height
+            height = maxHeight
+          }
+        }
 
-          const compressedFile = new File([blob], file.name, {
-            type: "image/jpeg",
-            lastModified: Date.now(),
-          })
+        // Set canvas dimensions
+        canvas.width = width
+        canvas.height = height
 
-          const dataUrl = canvas.toDataURL("image/jpeg", quality)
+        // Clear canvas and draw image
+        ctx.clearRect(0, 0, width, height)
+        ctx.drawImage(img, 0, 0, width, height)
 
-          resolve({
-            file: compressedFile,
-            dataUrl,
-            width,
-            height,
-          })
-        },
-        "image/jpeg",
-        quality,
-      )
+        // Convert to blob
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error("Failed to create blob from canvas"))
+              return
+            }
+
+            try {
+              const compressedFile = new File([blob], file.name, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              })
+
+              const dataUrl = canvas.toDataURL("image/jpeg", quality)
+
+              resolve({
+                file: compressedFile,
+                dataUrl,
+                width,
+                height,
+              })
+            } catch (error) {
+              reject(new Error("Failed to create compressed file"))
+            }
+          },
+          "image/jpeg",
+          quality,
+        )
+      } catch (error) {
+        reject(new Error("Failed to process image on canvas"))
+      }
     }
 
-    img.onerror = () => reject(new Error("Failed to load image"))
-    img.src = URL.createObjectURL(file)
+    img.onerror = (error) => {
+      console.error("Image load error:", error)
+      reject(new Error("Failed to load image file"))
+    }
+
+    // Create object URL from file
+    try {
+      const objectUrl = URL.createObjectURL(file)
+      img.src = objectUrl
+
+      // Clean up object URL after image loads or fails
+      img.onload = ((originalOnLoad) =>
+        function (this: HTMLImageElement, ev: Event) {
+          URL.revokeObjectURL(objectUrl)
+          return originalOnLoad?.call(this, ev)
+        })(img.onload)
+
+      img.onerror = ((originalOnError) =>
+        function (this: HTMLImageElement, ev: string | Event) {
+          URL.revokeObjectURL(objectUrl)
+          return originalOnError?.call(this, ev)
+        })(img.onerror)
+    } catch (error) {
+      reject(new Error("Failed to create object URL from file"))
+    }
   })
 }
 
