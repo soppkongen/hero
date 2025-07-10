@@ -1,14 +1,11 @@
 "use client"
 
-import { Header } from "@/components/header"
 import { Navigation } from "@/components/navigation"
 import { Waves, Recycle, Heart, Users, Target, Mail } from "lucide-react"
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen pb-20">
-      <Header />
-
       <main className="max-w-md mx-auto px-4 py-6">
         {/* Hero Section */}
         <div className="card p-8 mb-6 text-center bg-gradient-to-br from-forest-green/10 to-ocean-blue/10">

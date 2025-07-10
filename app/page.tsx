@@ -5,7 +5,6 @@ import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
 import { PostCard } from "@/components/post-card"
 import { Button } from "@/components/ui/button"
-import { Header } from "@/components/header"
 import { Plus, Waves, Recycle } from "lucide-react"
 import Link from "next/link"
 
@@ -114,8 +113,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen pb-20">
-      <Header onRefresh={fetchPosts} />
-
       <main className="max-w-md mx-auto px-4 py-6">
         {/* Error Message */}
         {error && (

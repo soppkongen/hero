@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
 import { Navigation } from "@/components/navigation"
-import { Header } from "@/components/header"
 import { Trophy, Medal, Award, Crown } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -134,7 +133,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen pb-20">
-      <Header />
+      <Navigation />
 
       <main className="max-w-md mx-auto px-4 py-6">
         {/* Current User Rank */}

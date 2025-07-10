@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { InlineWeightEstimator } from "@/components/inline-weight-estimator"
-import { Header } from "@/components/header"
 import {
   Camera,
   Upload,
@@ -350,8 +349,6 @@ export default function CreatePage() {
           </div>
         </div>
       )}
-
-      <Header />
 
       <main className="max-w-md mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="space-y-6">

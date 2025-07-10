@@ -5,7 +5,6 @@ import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
 import { PostCard } from "@/components/post-card"
 import { Navigation } from "@/components/navigation"
-import { Header } from "@/components/header"
 import { Settings, Trophy, Calendar, LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -151,8 +150,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen pb-20">
-      <Header />
-
       <main className="max-w-md mx-auto px-4 py-6">
         {/* Profile Header */}
         <div className="card p-6 mb-6">
