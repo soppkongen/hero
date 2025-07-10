@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
-import { compressImage, validateImageFile } from "@/lib/image-utils"
+import { compressImage, fallbackCompressImage, validateImageFile } from "@/lib/image-utils"
 import { DataCollectionService, type CleanupReportData, type WasteCategory } from "@/lib/data-collection"
 import { Navigation } from "@/components/navigation"
 import { InlineWeightEstimator } from "@/components/inline-weight-estimator"
@@ -71,8 +71,24 @@ export default function CreatePostPage() {
 
     try {
       console.log("Starting image compression...")
-      const compressed = await compressImage(file, 800, 800, 0.8)
-      console.log("Image compressed successfully:", compressed.width, "x", compressed.height)
+
+      let compressed
+      try {
+        // Try primary compression method
+        compressed = await compressImage(file, 800, 800, 0.8)
+        console.log("Image compressed successfully with primary method:", compressed.width, "x", compressed.height)
+      } catch (primaryError) {
+        console.log("Primary compression failed, trying fallback method:", primaryError)
+
+        try {
+          // Try fallback compression method
+          compressed = await fallbackCompressImage(file, 800, 800, 0.8)
+          console.log("Image compressed successfully with fallback method:", compressed.width, "x", compressed.height)
+        } catch (fallbackError) {
+          console.error("Both compression methods failed:", fallbackError)
+          throw new Error("Kunne ikke behandle bildet. Prøv et annet bilde eller format.")
+        }
+      }
 
       setImage(compressed.dataUrl)
       setImageFile(compressed.file)
@@ -83,9 +99,11 @@ export default function CreatePostPage() {
           userId: user.id,
           activityType: "image_uploaded",
           activityData: {
-            fileSize: file.size,
-            fileType: file.type,
-            compressed: true,
+            originalSize: file.size,
+            compressedSize: compressed.file.size,
+            originalType: file.type,
+            compressedType: compressed.file.type,
+            compressionRatio: Math.round((1 - compressed.file.size / file.size) * 100),
           },
         })
       }
@@ -149,10 +167,10 @@ export default function CreatePostPage() {
   const uploadImageToSupabase = async (file: File): Promise<string> => {
     if (!user) throw new Error("User not authenticated")
 
-    const fileExt = file.name.split(".").pop() || "jpg"
+    const fileExt = file.name.split(".").pop() || "webp"
     const fileName = `${user.id}/${Date.now()}.${fileExt}`
 
-    console.log("Uploading image:", fileName)
+    console.log("Uploading image:", fileName, "Size:", file.size, "Type:", file.type)
 
     const { data, error } = await supabase.storage.from("post-images").upload(fileName, file, {
       cacheControl: "3600",
@@ -337,6 +355,11 @@ export default function CreatePostPage() {
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
+                {imageFile && (
+                  <div className="mt-2 text-xs text-gray-500 text-center">
+                    {imageFile.type} • {Math.round(imageFile.size / 1024)}KB
+                  </div>
+                )}
               </div>
             ) : (
               <div
@@ -347,11 +370,17 @@ export default function CreatePostPage() {
                 <p className="text-gray-600 text-center">
                   Trykk for å velge bilde
                   <br />
-                  <span className="text-sm text-gray-400">JPEG, PNG eller WebP</span>
+                  <span className="text-sm text-gray-400">JPEG, PNG, WebP eller HEIC</span>
                 </p>
               </div>
             )}
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.heic,.heif"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
           </div>
 
           {/* Caption */}
