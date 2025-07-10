@@ -2,629 +2,668 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { supabase } from "@/lib/supabase"
-import { compressImage, fallbackCompressImage, validateImageFile } from "@/lib/image-utils"
-import { DataCollectionService, type CleanupReportData, type WasteCategory } from "@/lib/data-collection"
-import { Navigation } from "@/components/navigation"
-import { InlineWeightEstimator } from "@/components/inline-weight-estimator"
-import { Camera, MapPin, Trash2, X, Calculator, Edit3, Users, Clock, Cloud } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { compressImage, validateImageFile, uploadImageToSupabase } from "@/lib/image-utils"
+import { DataCollectionService, type CleanupReportData } from "@/lib/data-collection"
+import { OfflineSyncService } from "@/lib/offline-sync"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Image from "next/image"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { InlineWeightEstimator } from "@/components/inline-weight-estimator"
+import {
+  Camera,
+  Upload,
+  MapPin,
+  Users,
+  Clock,
+  Building,
+  Cloud,
+  Waves,
+  ChevronDown,
+  ChevronUp,
+  Scale,
+  Calculator,
+  Wifi,
+  WifiOff,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react"
 
-const wasteTypes = ["Plast", "Glass", "Metall", "Papir", "Sigarettstumper", "Fiskeutstyr", "Tau", "Emballasje", "Annet"]
+const WASTE_TYPES = [
+  { id: "plastic_bottles", label: "Plastflasker", icon: "🍼" },
+  { id: "plastic_bags", label: "Plastposer", icon: "🛍️" },
+  { id: "fishing_gear", label: "Fiskeutstyr", icon: "🎣" },
+  { id: "cigarette_butts", label: "Sigarettstumper", icon: "🚬" },
+  { id: "food_packaging", label: "Matemballasje", icon: "📦" },
+  { id: "glass_bottles", label: "Glassflasker", icon: "🍾" },
+  { id: "metal_cans", label: "Metallbokser", icon: "🥫" },
+  { id: "paper_cardboard", label: "Papir/kartong", icon: "📄" },
+  { id: "other", label: "Annet", icon: "🗑️" },
+]
 
-const weatherOptions = ["Solskinn", "Delvis skyet", "Overskyet", "Lett regn", "Kraftig regn", "Vind", "Stille"]
+const WEATHER_CONDITIONS = ["Solskinn", "Overskyet", "Regn", "Vind", "Tåke"]
+const TIDE_LEVELS = ["Lavvann", "Høyvann", "Stigende", "Fallende"]
 
-const tideOptions = ["Lavvann", "Stigende", "Høyvann", "Fallende", "Ukjent"]
-
-export default function CreatePostPage() {
-  const { user } = useAuth()
+export default function CreatePage() {
+  const { user, loading } = useAuth()
   const router = useRouter()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isOnline, setIsOnline] = useState(true)
+  const [pendingSync, setPendingSync] = useState({ posts: 0, images: 0 })
 
-  const [image, setImage] = useState<string | null>(null)
-  const [imageFile, setImageFile] = useState<File | null>(null)
+  // Form state
+  const [image, setImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [caption, setCaption] = useState("")
   const [location, setLocation] = useState("")
   const [selectedWasteTypes, setSelectedWasteTypes] = useState<string[]>([])
-  const [estimatedWeight, setEstimatedWeight] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [useEstimator, setUseEstimator] = useState(false)
+  const [estimatedWeight, setEstimatedWeight] = useState<number | null>(null)
+  const [manualWeight, setManualWeight] = useState("")
+  const [estimationMethod, setEstimationMethod] = useState<string | null>(null)
+  const [estimationData, setEstimationData] = useState<any>(null)
 
-  // Enhanced data collection fields
-  const [volunteerCount, setVolunteerCount] = useState<number>(1)
-  const [cleanupDuration, setCleanupDuration] = useState<number>(60)
+  // Advanced fields
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [volunteerCount, setVolunteerCount] = useState("1")
+  const [cleanupDuration, setCleanupDuration] = useState("")
   const [organizationName, setOrganizationName] = useState("")
   const [weatherConditions, setWeatherConditions] = useState("")
   const [tideLevel, setTideLevel] = useState("")
-  const [accessibilityRating, setAccessibilityRating] = useState<number>(3)
-  const [showAdvancedFields, setShowAdvancedFields] = useState(false)
+  const [accessibilityRating, setAccessibilityRating] = useState("3")
 
-  // Weight estimation states
-  const [useWeightEstimator, setUseWeightEstimator] = useState(false)
-  const [estimationData, setEstimationData] = useState<{
-    weight: number
-    confidence: number
-    method: string
-  } | null>(null)
+  // UI state
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [imageProcessing, setImageProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Check online status and pending sync
+  useEffect(() => {
+    const updateOnlineStatus = () => {
+      setIsOnline(navigator.onLine)
+    }
+
+    const updatePendingSync = () => {
+      setPendingSync(OfflineSyncService.getPendingSyncCount())
+    }
+
+    window.addEventListener("online", updateOnlineStatus)
+    window.addEventListener("offline", updateOnlineStatus)
+
+    updateOnlineStatus()
+    updatePendingSync()
+
+    // Update pending sync count periodically
+    const interval = setInterval(updatePendingSync, 5000)
+
+    return () => {
+      window.removeEventListener("online", updateOnlineStatus)
+      window.removeEventListener("offline", updateOnlineStatus)
+      clearInterval(interval)
+    }
+  }, [])
+
+  // Auto-sync when coming back online
+  useEffect(() => {
+    if (isOnline && (pendingSync.posts > 0 || pendingSync.images > 0)) {
+      handleSync()
+    }
+  }, [isOnline])
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/velkommen")
+    }
+  }, [user, loading, router])
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    console.log("Selected file:", file.name, file.type, file.size)
-
-    const validationError = validateImageFile(file)
-    if (validationError) {
-      setError(validationError)
-      return
-    }
-
-    setError("")
-    setLoading(true)
+    setError(null)
+    setImageProcessing(true)
 
     try {
-      console.log("Starting image compression...")
-
-      let compressed
-      try {
-        // Try primary compression method
-        compressed = await compressImage(file, 800, 800, 0.8)
-        console.log("Image compressed successfully with primary method:", compressed.width, "x", compressed.height)
-      } catch (primaryError) {
-        console.log("Primary compression failed, trying fallback method:", primaryError)
-
-        try {
-          // Try fallback compression method
-          compressed = await fallbackCompressImage(file, 800, 800, 0.8)
-          console.log("Image compressed successfully with fallback method:", compressed.width, "x", compressed.height)
-        } catch (fallbackError) {
-          console.error("Both compression methods failed:", fallbackError)
-          throw new Error("Kunne ikke behandle bildet. Prøv et annet bilde eller format.")
-        }
+      // Validate file
+      const validationError = validateImageFile(file)
+      if (validationError) {
+        setError(validationError)
+        return
       }
 
-      setImage(compressed.dataUrl)
-      setImageFile(compressed.file)
+      console.log("Processing image:", file.name, file.size, file.type)
 
-      // Log activity
-      if (user) {
-        DataCollectionService.logUserActivity({
-          userId: user.id,
-          activityType: "image_uploaded",
-          activityData: {
-            originalSize: file.size,
-            compressedSize: compressed.file.size,
-            originalType: file.type,
-            compressedType: compressed.file.type,
-            compressionRatio: Math.round((1 - compressed.file.size / file.size) * 100),
-          },
-        })
-      }
-    } catch (err) {
-      console.error("Image compression error:", err)
-      setError(`Kunne ikke behandle bildet: ${err instanceof Error ? err.message : "Ukjent feil"}`)
+      // Compress image
+      const compressed = await compressImage(file)
+      console.log("Image compressed:", compressed.width, compressed.height, compressed.file.size)
+
+      setImage(compressed.file)
+      setImagePreview(compressed.dataUrl)
+    } catch (error: any) {
+      console.error("Image processing error:", error)
+      setError(`Kunne ikke behandle bildet: ${error.message}`)
     } finally {
-      setLoading(false)
+      setImageProcessing(false)
     }
   }
 
-  const handleWasteTypeToggle = (wasteType: string) => {
-    setSelectedWasteTypes((prev) => {
-      const newTypes = prev.includes(wasteType) ? prev.filter((type) => type !== wasteType) : [...prev, wasteType]
-
-      // Log activity
-      if (user) {
-        DataCollectionService.logUserActivity({
-          userId: user.id,
-          activityType: "waste_type_selected",
-          activityData: {
-            wasteType,
-            action: prev.includes(wasteType) ? "removed" : "added",
-            totalSelected: newTypes.length,
-          },
-        })
-      }
-
-      return newTypes
-    })
+  const handleWeightEstimation = (weight: number, method: string, data: any) => {
+    setEstimatedWeight(weight)
+    setEstimationMethod(method)
+    setEstimationData(data)
+    console.log("Weight estimated:", weight, "kg using", method)
   }
 
-  const handleWeightEstimated = (weight: number, confidence: number, method: string) => {
-    setEstimationData({ weight, confidence, method })
-    setEstimatedWeight(weight.toString())
-    setUseWeightEstimator(false)
-
-    // Log weight estimation activity
-    if (user) {
-      DataCollectionService.logUserActivity({
-        userId: user.id,
-        activityType: "weight_estimated",
-        activityData: {
-          method,
-          estimatedWeight: weight,
-          confidence,
-          wasteTypes: selectedWasteTypes,
-        },
-      })
-    }
-  }
-
-  const calculatePoints = () => {
-    const basePoints = 10
-    const weightBonus = Math.floor(Number.parseFloat(estimatedWeight || "0") * 5)
-    const typeBonus = selectedWasteTypes.length * 2
-    const volunteerBonus = Math.max(0, (volunteerCount - 1) * 5) // Bonus for group cleanups
-    return basePoints + weightBonus + typeBonus + volunteerBonus
-  }
-
-  const uploadImageToSupabase = async (file: File): Promise<string> => {
-    if (!user) throw new Error("User not authenticated")
-
-    const fileExt = file.name.split(".").pop() || "webp"
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`
-
-    console.log("Uploading image:", fileName, "Size:", file.size, "Type:", file.type)
-
-    const { data, error } = await supabase.storage.from("post-images").upload(fileName, file, {
-      cacheControl: "3600",
-      upsert: false,
-    })
-
-    if (error) {
-      console.error("Storage upload error:", error)
-      throw new Error(`Upload feilet: ${error.message}`)
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("post-images").getPublicUrl(data.path)
-
-    console.log("Image uploaded successfully:", publicUrl)
-    return publicUrl
-  }
-
-  const saveEstimationData = async (postId: string) => {
-    if (!estimationData || !user) return
+  const handleSync = async () => {
+    if (!isOnline) return
 
     try {
-      await supabase.from("waste_pickup").insert({
-        user_id: user.id,
-        post_id: postId,
-        waste_type: selectedWasteTypes.join(", "),
-        estimation_method: estimationData.method,
-        estimated_weight_kg: estimationData.weight,
-        confidence_pct: estimationData.confidence,
-        ...(estimationData.method === "bag" && { bag_count: 1 }), // Could be enhanced to store actual values
-      })
+      console.log("Starting offline sync...")
+      const results = await OfflineSyncService.syncOfflineData()
+
+      if (results.posts > 0 || results.images > 0) {
+        console.log(`Synced ${results.posts} posts and ${results.images} images`)
+        setPendingSync(OfflineSyncService.getPendingSyncCount())
+      }
+
+      if (results.errors.length > 0) {
+        console.error("Sync errors:", results.errors)
+      }
     } catch (error) {
-      console.error("Error saving estimation data:", error)
-      // Don't fail the post creation if estimation data fails to save
+      console.error("Sync failed:", error)
     }
-  }
-
-  const createComprehensiveReport = async (postId: string, imageUrl: string) => {
-    if (!user) return
-
-    // Prepare waste categories
-    const wasteCategories: WasteCategory[] = selectedWasteTypes.map((type) => ({
-      type,
-      weight: estimatedWeight ? Number.parseFloat(estimatedWeight) / selectedWasteTypes.length : undefined,
-      unit: "kg" as const,
-    }))
-
-    // Create comprehensive cleanup report
-    const reportData: CleanupReportData = {
-      postId,
-      userId: user.id,
-      locationName: location.trim() || undefined,
-      cleanupDate: new Date(),
-      cleanupDurationMinutes: cleanupDuration,
-      volunteerCount,
-      organizationName: organizationName.trim() || undefined,
-      wasteCategories,
-      totalWeightKg: estimatedWeight ? Number.parseFloat(estimatedWeight) : undefined,
-      weatherConditions: weatherConditions || undefined,
-      tideLevel: tideLevel || undefined,
-      accessibilityRating,
-      afterPhotos: [imageUrl], // Main post image as after photo
-      estimationMethod: estimationData?.method,
-      estimationConfidence: estimationData?.confidence,
-    }
-
-    await DataCollectionService.createCleanupReport(reportData)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || !imageFile || !caption.trim()) {
-      setError("Alle påkrevde felt må fylles ut")
-      return
-    }
+    if (!user || !image) return
 
-    setLoading(true)
-    setError("")
+    setIsSubmitting(true)
+    setError(null)
 
     try {
-      console.log("Starting post creation...")
+      const finalWeight = useEstimator ? estimatedWeight : Number.parseFloat(manualWeight) || null
+      const postId = crypto.randomUUID()
 
-      // Upload image first
-      const imageUrl = await uploadImageToSupabase(imageFile)
-      console.log("Image uploaded, creating post...")
-
-      // Create post
-      const postData = {
-        user_id: user.id,
-        caption: caption.trim(),
-        image_url: imageUrl,
-        location: location.trim() || null,
-        waste_type: selectedWasteTypes,
-        estimated_weight: estimatedWeight ? Number.parseFloat(estimatedWeight) : null,
-        points_earned: calculatePoints(),
+      // Prepare cleanup report data
+      const cleanupReportData: CleanupReportData = {
+        postId,
+        userId: user.id,
+        locationName: location,
+        cleanupDate: new Date(),
+        cleanupDurationMinutes: cleanupDuration ? Number.parseInt(cleanupDuration) : undefined,
+        volunteerCount: Number.parseInt(volunteerCount),
+        organizationName: organizationName || undefined,
+        wasteCategories: selectedWasteTypes.map((type) => ({
+          type,
+          weight: finalWeight ? finalWeight / selectedWasteTypes.length : undefined,
+          unit: "kg" as const,
+        })),
+        totalWeightKg: finalWeight || undefined,
+        weatherConditions: weatherConditions || undefined,
+        tideLevel: tideLevel || undefined,
+        accessibilityRating: Number.parseInt(accessibilityRating),
+        wastePhotos: [imagePreview!],
+        estimationMethod: estimationMethod || undefined,
+        estimationConfidence: estimationData?.confidence || undefined,
       }
 
-      console.log("Post data:", postData)
+      if (isOnline) {
+        // Online submission
+        console.log("Submitting online...")
 
-      const { data, error: postError } = await supabase.from("posts").insert(postData).select()
+        // Upload image
+        const imageUrl = await uploadImageToSupabase(image, user.id)
 
-      if (postError) {
-        console.error("Post creation error:", postError)
-        throw new Error(`Kunne ikke opprette innlegg: ${postError.message}`)
-      }
-
-      console.log("Post created successfully:", data)
-
-      if (data && data[0]) {
-        // Save estimation data if available
-        await saveEstimationData(data[0].id)
-
-        // Create comprehensive report for future API submission
-        await createComprehensiveReport(data[0].id, imageUrl)
-
-        // Log post creation activity
-        await DataCollectionService.logUserActivity({
-          userId: user.id,
-          activityType: "post_created",
-          activityData: {
-            postId: data[0].id,
-            location: location.trim(),
-            wasteTypes: selectedWasteTypes,
-            estimatedWeight: estimatedWeight ? Number.parseFloat(estimatedWeight) : null,
-            volunteerCount,
-            hasEstimation: !!estimationData,
-            pointsEarned: calculatePoints(),
-          },
+        // Create post
+        const { error: postError } = await supabase.from("posts").insert({
+          id: postId,
+          user_id: user.id,
+          caption,
+          image_url: imageUrl,
+          location,
+          waste_type: selectedWasteTypes,
+          estimated_weight: finalWeight,
+          points_earned: Math.min(Math.max(Math.floor((finalWeight || 1) * 2), 5), 50),
         })
-      }
 
-      // Redirect to home page
-      router.push("/")
-    } catch (err: any) {
-      console.error("Post creation error:", err)
-      setError(err.message || "Kunne ikke opprette innlegg")
+        if (postError) throw postError
+
+        // Save estimation data if used
+        if (useEstimator && estimationData) {
+          await supabase.from("waste_pickup").insert({
+            user_id: user.id,
+            post_id: postId,
+            estimation_method: estimationMethod!,
+            estimated_weight_kg: estimatedWeight,
+            confidence_pct: estimationData.confidence,
+            bag_size: estimationData.bagSize,
+            bag_count: estimationData.bagCount,
+            volume_length_m: estimationData.length,
+            volume_width_m: estimationData.width,
+            volume_height_m: estimationData.height,
+            photo_url: estimationData.photoUrl,
+            reference_object: estimationData.referenceObject,
+          })
+        }
+
+        // Create comprehensive cleanup report
+        await DataCollectionService.createCleanupReport(cleanupReportData)
+
+        console.log("Post created successfully")
+        router.push("/")
+      } else {
+        // Offline submission
+        console.log("Saving for offline sync...")
+
+        // Save post for offline sync
+        await OfflineSyncService.savePostOffline({
+          id: postId,
+          user_id: user.id,
+          caption,
+          image_url: `offline_${postId}`, // Temporary URL
+          image_blob: image,
+          location,
+          waste_type: selectedWasteTypes,
+          estimated_weight: finalWeight,
+          points_earned: Math.min(Math.max(Math.floor((finalWeight || 1) * 2), 5), 50),
+          created_at: new Date().toISOString(),
+        })
+
+        // Save image for offline sync
+        await OfflineSyncService.saveImageOffline({
+          id: `img_${postId}`,
+          blob: image,
+          filename: `${postId}.webp`,
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+        })
+
+        setPendingSync(OfflineSyncService.getPendingSyncCount())
+
+        console.log("Post saved offline")
+        router.push("/")
+      }
+    } catch (error: any) {
+      console.error("Error creating post:", error)
+      setError(`Kunne ikke opprette innlegg: ${error.message}`)
     } finally {
-      setLoading(false)
+      setIsSubmitting(false)
     }
   }
 
-  if (!user) {
-    router.push("/auth")
-    return null
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ocean-blue mx-auto mb-4"></div>
+          <p className="text-gray-600">Laster...</p>
+        </div>
+      </div>
+    )
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="flex items-center justify-between px-4 py-4">
-          <button onClick={() => router.back()} className="text-gray-600 hover:text-gray-800">
-            <X className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-semibold text-gray-900">Nytt innlegg</h1>
-          <button
-            onClick={handleSubmit}
-            disabled={loading || !imageFile || !caption.trim()}
-            className="btn-primary text-sm px-4 py-2 disabled:opacity-50"
-          >
-            {loading ? "Publiserer..." : "Publiser"}
-          </button>
-        </div>
-      </header>
+  if (!user) return null
 
-      <main className="max-w-md mx-auto px-4 py-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Image Upload */}
-          <div className="card p-4">
-            {image ? (
-              <div className="relative">
-                <div className="aspect-square relative rounded-lg overflow-hidden">
-                  <Image src={image || "/placeholder.svg"} alt="Selected image" fill className="object-cover" />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImage(null)
-                    setImageFile(null)
-                  }}
-                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-                {imageFile && (
-                  <div className="mt-2 text-xs text-gray-500 text-center">
-                    {imageFile.type} • {Math.round(imageFile.size / 1024)}KB
-                  </div>
-                )}
-              </div>
+  return (
+    <div className="min-h-screen pb-20">
+      {/* Connection Status Bar */}
+      <div
+        className={`px-4 py-2 text-sm font-medium ${
+          isOnline
+            ? "bg-green-50 text-green-800 border-b border-green-200"
+            : "bg-orange-50 text-orange-800 border-b border-orange-200"
+        }`}
+      >
+        <div className="flex items-center justify-between max-w-md mx-auto">
+          <div className="flex items-center gap-2">
+            {isOnline ? (
+              <>
+                <Wifi className="w-4 h-4" />
+                <span>Tilkoblet</span>
+              </>
             ) : (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-forest-green transition-colors"
-              >
-                <Camera className="w-12 h-12 text-gray-400 mb-2" />
-                <p className="text-gray-600 text-center">
-                  Trykk for å velge bilde
-                  <br />
-                  <span className="text-sm text-gray-400">JPEG, PNG, WebP eller HEIC</span>
-                </p>
-              </div>
+              <>
+                <WifiOff className="w-4 h-4" />
+                <span>Offline modus</span>
+              </>
             )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,.heic,.heif"
-              onChange={handleImageSelect}
-              className="hidden"
-            />
           </div>
 
+          {(pendingSync.posts > 0 || pendingSync.images > 0) && (
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              <span>{pendingSync.posts + pendingSync.images} venter på synkronisering</span>
+              {isOnline && (
+                <Button size="sm" variant="outline" onClick={handleSync}>
+                  Synkroniser
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <main className="max-w-md mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Opprett innlegg</h1>
+          <p className="text-gray-600">Del din kystopprydding med fellesskapet</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Image Upload */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Camera className="w-5 h-5" />
+                Bilde av oppryddingen
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {imagePreview ? (
+                <div className="space-y-4">
+                  <img
+                    src={imagePreview || "/placeholder.svg"}
+                    alt="Preview"
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setImage(null)
+                      setImagePreview(null)
+                    }}
+                    className="w-full"
+                  >
+                    Velg nytt bilde
+                  </Button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600 mb-4">
+                    {imageProcessing ? "Behandler bilde..." : "Last opp bilde av oppryddingen"}
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    disabled={imageProcessing}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer ${
+                      imageProcessing ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  >
+                    {imageProcessing ? "Behandler..." : "Velg bilde"}
+                  </label>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Caption */}
-          <div className="card p-4">
-            <label htmlFor="caption" className="block text-sm font-medium text-gray-700 mb-2">
-              Beskrivelse *
-            </label>
-            <textarea
+          <div className="space-y-2">
+            <Label htmlFor="caption">Beskrivelse</Label>
+            <Textarea
               id="caption"
+              placeholder="Fortell om oppryddingen din..."
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              placeholder="Fortell om din kystopprydning..."
-              className="input min-h-[100px] resize-none"
               required
+              rows={3}
             />
           </div>
 
           {/* Location */}
-          <div className="card p-4">
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-              <MapPin className="w-4 h-4 inline mr-1" />
+          <div className="space-y-2">
+            <Label htmlFor="location" className="flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
               Sted
-            </label>
-            <input
+            </Label>
+            <Input
               id="location"
-              type="text"
+              placeholder="F.eks. Bygdøy strand, Oslo"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="F.eks. Oslofjorden, Oslo"
-              className="input"
+              required
             />
           </div>
 
-          {/* Basic Cleanup Info */}
-          <div className="card p-4">
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-gray-700">Opprydningsinfo</label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAdvancedFields(!showAdvancedFields)}
-                className="text-xs"
-              >
-                {showAdvancedFields ? "Skjul detaljer" : "Vis detaljer"}
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="volunteers" className="text-sm flex items-center gap-1">
-                  <Users className="w-3 h-3" />
-                  Antall personer
-                </Label>
-                <Input
-                  id="volunteers"
-                  type="number"
-                  min="1"
-                  value={volunteerCount}
-                  onChange={(e) => setVolunteerCount(Number.parseInt(e.target.value) || 1)}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="duration" className="text-sm flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  Varighet (min)
-                </Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  min="5"
-                  step="5"
-                  value={cleanupDuration}
-                  onChange={(e) => setCleanupDuration(Number.parseInt(e.target.value) || 60)}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            {showAdvancedFields && (
-              <div className="mt-4 space-y-3">
-                <div>
-                  <Label htmlFor="organization" className="text-sm">
-                    Organisasjon (valgfritt)
-                  </Label>
-                  <Input
-                    id="organization"
-                    value={organizationName}
-                    onChange={(e) => setOrganizationName(e.target.value)}
-                    placeholder="F.eks. Hold Norge Rent"
-                    className="mt-1"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-sm flex items-center gap-1">
-                      <Cloud className="w-3 h-3" />
-                      Vær
-                    </Label>
-                    <Select value={weatherConditions} onValueChange={setWeatherConditions}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Velg vær" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {weatherOptions.map((weather) => (
-                          <SelectItem key={weather} value={weather}>
-                            {weather}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm">Tidevann</Label>
-                    <Select value={tideLevel} onValueChange={setTideLevel}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Velg tide" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tideOptions.map((tide) => (
-                          <SelectItem key={tide} value={tide}>
-                            {tide}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-sm">Tilgjengelighet (1-5): {accessibilityRating}</Label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={accessibilityRating}
-                    onChange={(e) => setAccessibilityRating(Number.parseInt(e.target.value))}
-                    className="w-full mt-1"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>Vanskelig</span>
-                    <span>Lett</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Waste Types */}
-          <div className="card p-4">
-            <label className="block text-sm font-medium text-gray-700 mb-3">Type søppel</label>
-            <div className="flex flex-wrap gap-2">
-              {wasteTypes.map((type) => (
+          <div className="space-y-3">
+            <Label>Type avfall</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {WASTE_TYPES.map((type) => (
                 <button
-                  key={type}
+                  key={type.id}
                   type="button"
-                  onClick={() => handleWasteTypeToggle(type)}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    selectedWasteTypes.includes(type)
-                      ? "bg-forest-green text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  onClick={() => {
+                    setSelectedWasteTypes((prev) =>
+                      prev.includes(type.id) ? prev.filter((id) => id !== type.id) : [...prev, type.id],
+                    )
+                  }}
+                  className={`p-3 rounded-lg border text-center transition-colors ${
+                    selectedWasteTypes.includes(type.id)
+                      ? "border-ocean-blue bg-ocean-blue/10 text-ocean-blue"
+                      : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  {type}
+                  <div className="text-lg mb-1">{type.icon}</div>
+                  <div className="text-xs font-medium">{type.label}</div>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Enhanced Weight Section */}
-          <div className="card p-4">
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-gray-700">Estimert vekt (kg)</label>
-              <div className="flex gap-2">
-                <Button
+          {/* Weight Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Scale className="w-5 h-5" />
+                Vekt estimering
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Toggle between manual and estimator */}
+              <div className="flex rounded-lg border border-gray-200 p-1">
+                <button
                   type="button"
-                  variant={!useWeightEstimator ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setUseWeightEstimator(false)}
-                  className="text-xs"
+                  onClick={() => setUseEstimator(false)}
+                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                    !useEstimator ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+                  }`}
                 >
-                  <Edit3 className="w-3 h-3 mr-1" />
-                  Manuell
-                </Button>
-                <Button
+                  📝 Manuell
+                </button>
+                <button
                   type="button"
-                  variant={useWeightEstimator ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setUseWeightEstimator(true)}
-                  className="text-xs"
+                  onClick={() => setUseEstimator(true)}
+                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                    useEstimator ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+                  }`}
                 >
-                  <Calculator className="w-3 h-3 mr-1" />
+                  <Calculator className="w-4 h-4 inline mr-1" />
                   Estimator
-                </Button>
+                </button>
               </div>
-            </div>
 
-            {!useWeightEstimator ? (
+              {useEstimator ? (
+                <div className="space-y-4">
+                  <InlineWeightEstimator onWeightCalculated={handleWeightEstimation} wasteTypes={selectedWasteTypes} />
+                  {estimatedWeight && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <span className="text-sm font-medium text-green-800">
+                        Estimert vekt: {estimatedWeight.toFixed(1)} kg
+                        {estimationData?.confidence && (
+                          <span className="text-green-600 ml-1">(±{estimationData.confidence}%)</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Vekt (kg)</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    step="0.1"
+                    placeholder="F.eks. 2.5"
+                    value={manualWeight}
+                    onChange={(e) => setManualWeight(e.target.value)}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Advanced Fields */}
+          <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" className="w-full justify-between bg-transparent">
+                <span>Opprydningsinfo (valgfritt)</span>
+                {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="volunteers" className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Antall frivillige
+                  </Label>
+                  <Input
+                    id="volunteers"
+                    type="number"
+                    min="1"
+                    value={volunteerCount}
+                    onChange={(e) => setVolunteerCount(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="duration" className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Varighet (min)
+                  </Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    placeholder="60"
+                    value={cleanupDuration}
+                    onChange={(e) => setCleanupDuration(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <input
-                  id="weight"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={estimatedWeight}
-                  onChange={(e) => setEstimatedWeight(e.target.value)}
-                  placeholder="F.eks. 2.5"
-                  className="input"
+                <Label htmlFor="organization" className="flex items-center gap-2">
+                  <Building className="w-4 h-4" />
+                  Organisasjon
+                </Label>
+                <Input
+                  id="organization"
+                  placeholder="F.eks. Oslo Røde Kors"
+                  value={organizationName}
+                  onChange={(e) => setOrganizationName(e.target.value)}
                 />
-                {estimationData && (
-                  <div className="text-xs text-green-600 flex items-center gap-1">
-                    <Calculator className="w-3 h-3" />
-                    Estimert med {estimationData.method}-metode (±{estimationData.confidence}%)
-                  </div>
-                )}
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Cloud className="w-4 h-4" />
+                    Værforhold
+                  </Label>
+                  <select
+                    value={weatherConditions}
+                    onChange={(e) => setWeatherConditions(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Velg værforhold</option>
+                    {WEATHER_CONDITIONS.map((condition) => (
+                      <option key={condition} value={condition}>
+                        {condition}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Waves className="w-4 h-4" />
+                    Tidevann
+                  </Label>
+                  <select
+                    value={tideLevel}
+                    onChange={(e) => setTideLevel(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Velg tidevann</option>
+                    {TIDE_LEVELS.map((tide) => (
+                      <option key={tide} value={tide}>
+                        {tide}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accessibility">Tilgjengelighet (1-5, hvor 5 er lett tilgjengelig)</Label>
+                <Input
+                  id="accessibility"
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={accessibilityRating}
+                  onChange={(e) => setAccessibilityRating(e.target.value)}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Vanskelig</span>
+                  <span>Lett</span>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Error Message */}
+          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>}
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            disabled={!image || !caption || !location || selectedWasteTypes.length === 0 || isSubmitting}
+            className="w-full bg-ocean-blue hover:bg-ocean-blue-dark text-white"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                {isOnline ? "Publiserer..." : "Lagrer offline..."}
+              </>
             ) : (
-              <InlineWeightEstimator
-                wasteTypes={selectedWasteTypes}
-                onWeightEstimated={handleWeightEstimated}
-                onClose={() => setUseWeightEstimator(false)}
-              />
+              <>{isOnline ? "Publiser innlegg" : "Lagre offline"}</>
             )}
-          </div>
+          </Button>
 
-          {/* Points Preview */}
-          <div className="card p-4 bg-green-50 border-green-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-green-800">Poeng du vil få:</span>
-              <span className="text-lg font-bold text-green-600">+{calculatePoints()}</span>
-            </div>
-            <p className="text-xs text-green-600 mt-1">Basert på vekt, type søppel, antall personer og grunnpoeng</p>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
+          {!isOnline && (
+            <p className="text-sm text-orange-600 text-center">
+              Innlegget vil bli publisert automatisk når du kommer tilbake online
+            </p>
           )}
         </form>
       </main>
-
-      <Navigation />
     </div>
   )
 }
