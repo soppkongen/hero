@@ -65,84 +65,88 @@ export default function WelcomePage() {
                 className="w-full sm:w-auto bg-gradient-to-r from-forest-green to-ocean-blue text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200"
               >
                 <span className="block sm:hidden">👉 Start nå</span>
-                <span className="hidden sm:block">👉 Start nå – logg din første ryddeinnsats</span>
+                <span className="hidden sm:block">👉 Start nå – lo og behold!</span>
               </Link>
 
-              <ShareButton
-                url={typeof window !== "undefined" ? window.location.href : ""}
-                title="Skjærgårdshelt - Bli en kystopprydningshelt!"
-                description="Bli med på Skjærgårdshelt og gjør en forskjell for norsk natur! Rydd kysten, få poeng, og vis verden hva du gjør 🌊♻️🇳🇴"
-                className="text-gray-600 hover:text-forest-green"
-              />
+              <ShareButton />
             </div>
           </div>
 
           {/* Features grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <div className="card p-6 text-center hover:shadow-xl transition-all duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            <div className="card p-6 text-center hover:shadow-lg transition-shadow">
               <div className="w-16 h-16 bg-gradient-to-br from-ocean-blue to-ocean-blue-light rounded-full flex items-center justify-center mx-auto mb-4">
                 <Target className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">Få poeng for innsatsen</h3>
-              <p className="text-gray-600">
-                Hver ryddeinnsats gir deg poeng basert på mengde og type avfall. Bygg opp nivået ditt og bli en ekte
-                skjærgårdshelt!
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Dokumenter innsatsen</h3>
+              <p className="text-gray-600 text-sm">
+                Ta bilde, registrer sted og type avfall. Vi gjør resten automatisk.
               </p>
             </div>
 
-            <div className="card p-6 text-center hover:shadow-xl transition-all duration-300">
+            <div className="card p-6 text-center hover:shadow-lg transition-shadow">
               <div className="w-16 h-16 bg-gradient-to-br from-forest-green to-forest-green-light rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">Bygg fellesskap</h3>
-              <p className="text-gray-600">
-                Se hva andre kysthelter gjør rundt om i Norge. Like, kommenter og inspirer hverandre til å gjøre mer.
-              </p>
-            </div>
-
-            <div className="card p-6 text-center hover:shadow-xl transition-all duration-300 md:col-span-1 lg:col-span-1">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">Vis din påvirkning</h3>
-              <p className="text-gray-600">
-                Del bilder og historier fra dine ryddeaksjoner. Vis verden hvor mye du har bidratt til et renere hav.
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Få poeng og nivåer</h3>
+              <p className="text-gray-600 text-sm">Jo mer du rydder, jo høyere nivå. Vis verden hvor mye du bidrar.</p>
+            </div>
+
+            <div className="card p-6 text-center hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Bygg fellesskap</h3>
+              <p className="text-gray-600 text-sm">
+                Se hva andre gjør, inspirer og bli inspirert. Sammen gjør vi en forskjell.
               </p>
             </div>
           </div>
 
           {/* Stats section */}
           <div className="card p-8 mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-8">Sammen gjør vi en forskjell</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Sammen har vi allerede:</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-ocean-blue-light mb-2">500+</div>
-                <div className="text-sm text-gray-600">Kysthelter</div>
+                <div className="text-3xl font-bold text-forest-green mb-2">🌊</div>
+                <div className="text-2xl font-bold text-gray-900">12+</div>
+                <div className="text-gray-600">Strender ryddet</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-forest-green-light mb-2">2.5T</div>
-                <div className="text-sm text-gray-600">Søppel samlet</div>
+                <div className="text-3xl font-bold text-ocean-blue mb-2">♻️</div>
+                <div className="text-2xl font-bold text-gray-900">45+ kg</div>
+                <div className="text-gray-600">Avfall samlet</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600 mb-2">150+</div>
-                <div className="text-sm text-gray-600">Strender ryddet</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-orange-500 mb-2">1000+</div>
-                <div className="text-sm text-gray-600">Ryddeaksjoner</div>
+                <div className="text-3xl font-bold text-purple-600 mb-2">👥</div>
+                <div className="text-2xl font-bold text-gray-900">25+</div>
+                <div className="text-gray-600">Aktive helter</div>
               </div>
             </div>
           </div>
 
-          {/* Final CTA */}
-          <div className="text-center">
-            <p className="text-lg text-gray-700 mb-6">Klar til å bli en del av bevegelsen?</p>
+          {/* Call to action */}
+          <div className="card p-8 bg-gradient-to-r from-forest-green/10 to-ocean-blue/10 border border-forest-green/20">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Klar til å gjøre en forskjell?</h2>
+            <p className="text-gray-700 mb-6">
+              Det tar bare 2 minutter å komme i gang. Ingen forpliktelser – bare muligheten til å bidra når du vil.
+            </p>
             <Link
               href="/auth"
               className="inline-block bg-gradient-to-r from-forest-green to-ocean-blue text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200"
             >
-              Bli med nå – det tar bare 2 minutter! 🌊
+              Bli Skjærgårdshelt nå! 🚀
             </Link>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-12 pt-8 border-t border-gray-200">
+            <p className="text-gray-600 text-sm">
+              Laget med <Heart className="w-4 h-4 inline text-red-500" /> for kysten vår.{" "}
+              <Link href="/om" className="text-forest-green hover:underline">
+                Les mer om prosjektet
+              </Link>
+            </p>
           </div>
         </div>
       </div>

@@ -227,23 +227,19 @@ export default function ProfilePage() {
         )}
 
         {/* Tabs */}
-        <div className="flex mb-6">
+        <div className="flex mb-6 bg-white/80 backdrop-blur-sm rounded-lg p-1 border border-gray-200">
           <button
             onClick={() => setActiveTab("posts")}
-            className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
-              activeTab === "posts"
-                ? "text-forest-green border-b-2 border-forest-green"
-                : "text-gray-500 hover:text-gray-700"
+            className={`flex-1 py-2 px-3 text-center text-sm font-medium rounded-md transition-colors ${
+              activeTab === "posts" ? "bg-forest-green text-white" : "text-gray-600 hover:text-gray-800"
             }`}
           >
             Innlegg ({posts.length})
           </button>
           <button
             onClick={() => setActiveTab("stats")}
-            className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
-              activeTab === "stats"
-                ? "text-forest-green border-b-2 border-forest-green"
-                : "text-gray-500 hover:text-gray-700"
+            className={`flex-1 py-2 px-3 text-center text-sm font-medium rounded-md transition-colors ${
+              activeTab === "stats" ? "bg-forest-green text-white" : "text-gray-600 hover:text-gray-800"
             }`}
           >
             Statistikk
@@ -255,17 +251,20 @@ export default function ProfilePage() {
           <div>
             {posts.length === 0 ? (
               <div className="text-center py-12">
-                <div className="mb-4">
-                  <Settings className="w-16 h-16 text-gray-300 mx-auto" />
+                <div className="card p-8">
+                  <Settings className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Ingen innlegg ennå</h3>
+                  <p className="text-gray-600 mb-4">Del din første kystopprydning!</p>
+                  <button
+                    onClick={() => router.push("/create")}
+                    className="bg-forest-green text-white px-6 py-2 rounded-lg hover:bg-forest-green-dark transition-colors"
+                  >
+                    Legg til innlegg
+                  </button>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Ingen innlegg ennå</h3>
-                <p className="text-gray-600 mb-4">Del din første kystopprydning!</p>
-                <button onClick={() => router.push("/create")} className="btn-primary">
-                  Legg til innlegg
-                </button>
               </div>
             ) : (
-              <div>
+              <div className="space-y-6">
                 {posts.map((post) => (
                   <PostCard key={post.id} post={post} onDelete={handleDeletePost} />
                 ))}

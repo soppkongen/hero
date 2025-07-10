@@ -13,8 +13,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { InlineWeightEstimator } from "@/components/inline-weight-estimator"
 import {
   Camera,
@@ -314,107 +312,113 @@ export default function CreatePage() {
   return (
     <div className="min-h-screen pb-20">
       {/* Connection Status Bar */}
-      <div
-        className={`px-4 py-2 text-sm font-medium ${
-          isOnline
-            ? "bg-green-50 text-green-800 border-b border-green-200"
-            : "bg-orange-50 text-orange-800 border-b border-orange-200"
-        }`}
-      >
-        <div className="flex items-center justify-between max-w-md mx-auto">
+      {(!isOnline || pendingSync.posts > 0 || pendingSync.images > 0) && (
+        <div
+          className={`px-4 py-2 text-sm font-medium ${
+            isOnline
+              ? "bg-green-50 text-green-800 border-b border-green-200"
+              : "bg-orange-50 text-orange-800 border-b border-orange-200"
+          }`}
+        >
+          <div className="flex items-center justify-between max-w-md mx-auto">
+            <div className="flex items-center gap-2">
+              {isOnline ? (
+                <>
+                  <Wifi className="w-4 h-4" />
+                  <span>Tilkoblet</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-4 h-4" />
+                  <span>Offline modus</span>
+                </>
+              )}
+            </div>
+
+            {(pendingSync.posts > 0 || pendingSync.images > 0) && (
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                <span>{pendingSync.posts + pendingSync.images} venter på synkronisering</span>
+                {isOnline && (
+                  <Button size="sm" variant="outline" onClick={handleSync}>
+                    Synkroniser
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
+        <div className="flex items-center justify-center py-4">
           <div className="flex items-center gap-2">
-            {isOnline ? (
-              <>
-                <Wifi className="w-4 h-4" />
-                <span>Tilkoblet</span>
-              </>
+            <Camera className="w-6 h-6 text-forest-green" />
+            <h1 className="text-lg font-semibold text-gray-900">Opprett innlegg</h1>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-md mx-auto px-4 py-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Image Upload */}
+          <div className="card p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Camera className="w-5 h-5 text-forest-green" />
+              <h3 className="font-semibold text-gray-900">Bilde av oppryddingen</h3>
+            </div>
+
+            {imagePreview ? (
+              <div className="space-y-4">
+                <img
+                  src={imagePreview || "/placeholder.svg"}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setImage(null)
+                    setImagePreview(null)
+                  }}
+                  className="w-full"
+                >
+                  Velg nytt bilde
+                </Button>
+              </div>
             ) : (
-              <>
-                <WifiOff className="w-4 h-4" />
-                <span>Offline modus</span>
-              </>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 mb-4">
+                  {imageProcessing ? "Behandler bilde..." : "Last opp bilde av oppryddingen"}
+                </p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  disabled={imageProcessing}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label
+                  htmlFor="image-upload"
+                  className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer transition-colors ${
+                    imageProcessing ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {imageProcessing ? "Behandler..." : "Velg bilde"}
+                </label>
+              </div>
             )}
           </div>
 
-          {(pendingSync.posts > 0 || pendingSync.images > 0) && (
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              <span>{pendingSync.posts + pendingSync.images} venter på synkronisering</span>
-              {isOnline && (
-                <Button size="sm" variant="outline" onClick={handleSync}>
-                  Synkroniser
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <main className="max-w-md mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Opprett innlegg</h1>
-          <p className="text-gray-600">Del din kystopprydding med fellesskapet</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Image Upload */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Camera className="w-5 h-5" />
-                Bilde av oppryddingen
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {imagePreview ? (
-                <div className="space-y-4">
-                  <img
-                    src={imagePreview || "/placeholder.svg"}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setImage(null)
-                      setImagePreview(null)
-                    }}
-                    className="w-full"
-                  >
-                    Velg nytt bilde
-                  </Button>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-4">
-                    {imageProcessing ? "Behandler bilde..." : "Last opp bilde av oppryddingen"}
-                  </p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    disabled={imageProcessing}
-                    className="hidden"
-                    id="image-upload"
-                  />
-                  <label
-                    htmlFor="image-upload"
-                    className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer ${
-                      imageProcessing ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {imageProcessing ? "Behandler..." : "Velg bilde"}
-                  </label>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Caption */}
           <div className="space-y-2">
-            <Label htmlFor="caption">Beskrivelse</Label>
+            <Label htmlFor="caption" className="text-gray-900 font-medium">
+              Beskrivelse
+            </Label>
             <Textarea
               id="caption"
               placeholder="Fortell om oppryddingen din..."
@@ -422,13 +426,14 @@ export default function CreatePage() {
               onChange={(e) => setCaption(e.target.value)}
               required
               rows={3}
+              className="border-gray-200 focus:border-forest-green focus:ring-forest-green/20"
             />
           </div>
 
           {/* Location */}
           <div className="space-y-2">
-            <Label htmlFor="location" className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
+            <Label htmlFor="location" className="flex items-center gap-2 text-gray-900 font-medium">
+              <MapPin className="w-4 h-4 text-forest-green" />
               Sted
             </Label>
             <Input
@@ -437,12 +442,13 @@ export default function CreatePage() {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               required
+              className="border-gray-200 focus:border-forest-green focus:ring-forest-green/20"
             />
           </div>
 
           {/* Waste Types */}
           <div className="space-y-3">
-            <Label>Type avfall</Label>
+            <Label className="text-gray-900 font-medium">Type avfall</Label>
             <div className="grid grid-cols-3 gap-2">
               {WASTE_TYPES.map((type) => (
                 <button
@@ -453,10 +459,8 @@ export default function CreatePage() {
                       prev.includes(type.id) ? prev.filter((id) => id !== type.id) : [...prev, type.id],
                     )
                   }}
-                  className={`p-3 rounded-lg border text-center transition-colors ${
-                    selectedWasteTypes.includes(type.id)
-                      ? "border-ocean-blue bg-ocean-blue/10 text-ocean-blue"
-                      : "border-gray-200 hover:border-gray-300"
+                  className={`card p-3 text-center transition-all duration-200 ${
+                    selectedWasteTypes.includes(type.id) ? "ring-2 ring-forest-green bg-green-50" : "hover:shadow-md"
                   }`}
                 >
                   <div className="text-lg mb-1">{type.icon}</div>
@@ -467,16 +471,15 @@ export default function CreatePage() {
           </div>
 
           {/* Weight Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Scale className="w-5 h-5" />
-                Vekt estimering
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="card p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Scale className="w-5 h-5 text-forest-green" />
+              <h3 className="font-semibold text-gray-900">Vekt estimering</h3>
+            </div>
+
+            <div className="space-y-4">
               {/* Toggle between manual and estimator */}
-              <div className="flex rounded-lg border border-gray-200 p-1">
+              <div className="flex rounded-lg border border-gray-200 p-1 bg-gray-50">
                 <button
                   type="button"
                   onClick={() => setUseEstimator(false)}
@@ -515,7 +518,9 @@ export default function CreatePage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Label htmlFor="weight">Vekt (kg)</Label>
+                  <Label htmlFor="weight" className="text-gray-900 font-medium">
+                    Vekt (kg)
+                  </Label>
                   <Input
                     id="weight"
                     type="number"
@@ -523,129 +528,144 @@ export default function CreatePage() {
                     placeholder="F.eks. 2.5"
                     value={manualWeight}
                     onChange={(e) => setManualWeight(e.target.value)}
+                    className="border-gray-200 focus:border-forest-green focus:ring-forest-green/20"
                   />
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Advanced Fields */}
-          <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" className="w-full justify-between bg-transparent">
-                <span>Opprydningsinfo (valgfritt)</span>
-                {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full flex items-center justify-between p-4 card hover:shadow-md transition-shadow"
+            >
+              <span className="font-medium text-gray-900">Opprydningsinfo (valgfritt)</span>
+              {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+
+            {showAdvanced && (
+              <div className="card p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="volunteers" className="flex items-center gap-2 text-gray-900 font-medium">
+                      <Users className="w-4 h-4 text-forest-green" />
+                      Antall frivillige
+                    </Label>
+                    <Input
+                      id="volunteers"
+                      type="number"
+                      min="1"
+                      value={volunteerCount}
+                      onChange={(e) => setVolunteerCount(e.target.value)}
+                      className="border-gray-200 focus:border-forest-green focus:ring-forest-green/20"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="duration" className="flex items-center gap-2 text-gray-900 font-medium">
+                      <Clock className="w-4 h-4 text-forest-green" />
+                      Varighet (min)
+                    </Label>
+                    <Input
+                      id="duration"
+                      type="number"
+                      placeholder="60"
+                      value={cleanupDuration}
+                      onChange={(e) => setCleanupDuration(e.target.value)}
+                      className="border-gray-200 focus:border-forest-green focus:ring-forest-green/20"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="volunteers" className="flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Antall frivillige
+                  <Label htmlFor="organization" className="flex items-center gap-2 text-gray-900 font-medium">
+                    <Building className="w-4 h-4 text-forest-green" />
+                    Organisasjon
                   </Label>
                   <Input
-                    id="volunteers"
-                    type="number"
+                    id="organization"
+                    placeholder="F.eks. Oslo Røde Kors"
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                    className="border-gray-200 focus:border-forest-green focus:ring-forest-green/20"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-gray-900 font-medium">
+                      <Cloud className="w-4 h-4 text-forest-green" />
+                      Værforhold
+                    </Label>
+                    <select
+                      value={weatherConditions}
+                      onChange={(e) => setWeatherConditions(e.target.value)}
+                      className="w-full p-2 border border-gray-200 rounded-md bg-white focus:border-forest-green focus:ring-forest-green/20 focus:outline-none"
+                    >
+                      <option value="">Velg værforhold</option>
+                      {WEATHER_CONDITIONS.map((condition) => (
+                        <option key={condition} value={condition}>
+                          {condition}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-gray-900 font-medium">
+                      <Waves className="w-4 h-4 text-forest-green" />
+                      Tidevann
+                    </Label>
+                    <select
+                      value={tideLevel}
+                      onChange={(e) => setTideLevel(e.target.value)}
+                      className="w-full p-2 border border-gray-200 rounded-md bg-white focus:border-forest-green focus:ring-forest-green/20 focus:outline-none"
+                    >
+                      <option value="">Velg tidevann</option>
+                      {TIDE_LEVELS.map((tide) => (
+                        <option key={tide} value={tide}>
+                          {tide}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="accessibility" className="text-gray-900 font-medium">
+                    Tilgjengelighet (1-5, hvor 5 er lett tilgjengelig)
+                  </Label>
+                  <Input
+                    id="accessibility"
+                    type="range"
                     min="1"
-                    value={volunteerCount}
-                    onChange={(e) => setVolunteerCount(e.target.value)}
+                    max="5"
+                    value={accessibilityRating}
+                    onChange={(e) => setAccessibilityRating(e.target.value)}
+                    className="w-full"
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="duration" className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Varighet (min)
-                  </Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    placeholder="60"
-                    value={cleanupDuration}
-                    onChange={(e) => setCleanupDuration(e.target.value)}
-                  />
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Vanskelig</span>
+                    <span>Lett</span>
+                  </div>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="organization" className="flex items-center gap-2">
-                  <Building className="w-4 h-4" />
-                  Organisasjon
-                </Label>
-                <Input
-                  id="organization"
-                  placeholder="F.eks. Oslo Røde Kors"
-                  value={organizationName}
-                  onChange={(e) => setOrganizationName(e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Cloud className="w-4 h-4" />
-                    Værforhold
-                  </Label>
-                  <select
-                    value={weatherConditions}
-                    onChange={(e) => setWeatherConditions(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">Velg værforhold</option>
-                    {WEATHER_CONDITIONS.map((condition) => (
-                      <option key={condition} value={condition}>
-                        {condition}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Waves className="w-4 h-4" />
-                    Tidevann
-                  </Label>
-                  <select
-                    value={tideLevel}
-                    onChange={(e) => setTideLevel(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">Velg tidevann</option>
-                    {TIDE_LEVELS.map((tide) => (
-                      <option key={tide} value={tide}>
-                        {tide}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="accessibility">Tilgjengelighet (1-5, hvor 5 er lett tilgjengelig)</Label>
-                <Input
-                  id="accessibility"
-                  type="range"
-                  min="1"
-                  max="5"
-                  value={accessibilityRating}
-                  onChange={(e) => setAccessibilityRating(e.target.value)}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Vanskelig</span>
-                  <span>Lett</span>
-                </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+            )}
+          </div>
 
           {/* Error Message */}
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>}
+          {error && (
+            <div className="card p-4 bg-red-50 border border-red-200">
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          )}
 
           {/* Submit Button */}
           <Button
             type="submit"
             disabled={!image || !caption || !location || selectedWasteTypes.length === 0 || isSubmitting}
-            className="w-full bg-ocean-blue hover:bg-ocean-blue-dark text-white"
+            className="w-full bg-forest-green hover:bg-forest-green-dark text-white"
           >
             {isSubmitting ? (
               <>
@@ -658,9 +678,11 @@ export default function CreatePage() {
           </Button>
 
           {!isOnline && (
-            <p className="text-sm text-orange-600 text-center">
-              Innlegget vil bli publisert automatisk når du kommer tilbake online
-            </p>
+            <div className="card p-3 bg-orange-50 border border-orange-200">
+              <p className="text-sm text-orange-600 text-center">
+                Innlegget vil bli publisert automatisk når du kommer tilbake online
+              </p>
+            </div>
           )}
         </form>
       </main>

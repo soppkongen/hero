@@ -113,8 +113,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen pb-20">
-      {/* Header with refresh button */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2">
             <Waves className="w-6 h-6 text-ocean-blue" />
@@ -134,9 +134,9 @@ export default function HomePage() {
       <main className="max-w-md mx-auto px-4 py-6">
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            {error}
-            <button onClick={fetchPosts} className="ml-2 underline">
+          <div className="card p-4 mb-6 bg-red-50 border border-red-200">
+            <p className="text-red-700 text-sm">{error}</p>
+            <button onClick={fetchPosts} className="text-red-600 underline text-sm mt-2">
               Prøv igjen
             </button>
           </div>
@@ -156,15 +156,17 @@ export default function HomePage() {
         {/* No Posts */}
         {!postsLoading && posts.length === 0 && !error && (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4">🌊</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Ingen innlegg ennå</h3>
-            <p className="text-gray-600 mb-6">Bli den første til å dele en kystopprydding!</p>
-            <Link href="/create">
-              <Button className="bg-ocean-blue hover:bg-ocean-blue-dark text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Opprett første innlegg
-              </Button>
-            </Link>
+            <div className="card p-8">
+              <div className="text-6xl mb-4">🌊</div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Ingen innlegg ennå</h3>
+              <p className="text-gray-600 mb-6">Bli den første til å dele en kystopprydding!</p>
+              <Link href="/create">
+                <Button className="bg-forest-green hover:bg-forest-green-dark text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Opprett første innlegg
+                </Button>
+              </Link>
+            </div>
           </div>
         )}
 

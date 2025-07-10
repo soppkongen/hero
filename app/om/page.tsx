@@ -17,9 +17,9 @@ export default function AboutPage() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main className="max-w-md mx-auto px-4 py-6">
         {/* Hero Section */}
-        <div className="card p-8 mb-8 text-center">
+        <div className="card p-8 mb-6 text-center">
           <div className="flex items-center justify-center gap-3 mb-6">
             <div className="flex items-center gap-2">
               <Waves className="w-10 h-10 text-ocean-blue-light" />
@@ -135,7 +135,7 @@ export default function AboutPage() {
             Plattformen er 100 % åpen for samarbeid og videreutvikling.
           </p>
 
-          <div className="bg-gradient-to-r from-forest-green to-ocean-blue text-white p-4 rounded-lg text-center">
+          <div className="card p-4 bg-gradient-to-r from-forest-green to-ocean-blue text-white text-center">
             <p className="font-semibold mb-2">Ta kontakt hvis du vil være med!</p>
             <a
               href="mailto:loke@t-pip.no"
